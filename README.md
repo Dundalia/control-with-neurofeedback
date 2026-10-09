@@ -2,7 +2,7 @@
 
 Code and data for *Cross-Model In-Context Neurofeedback Reveals (Limited) Activation Control in LLMs* (Davide Baldelli, Damiano Fornasiere, Mirko Bronzi).
 
-In an in-context neurofeedback session, a model is asked to maximize or minimize a score, and at every turn it is shown the score of its last reply: a *readout* of its own activations. Control sessions are identical except that the scores shown are random.
+In an in-context neurofeedback session, a model is asked to maximize or minimize a score, and at every turn it is shown the score of its last reply: a *readout* of the activations that the reply produces in a *subject* model. The subject is the model itself, except in Experiment 1, where the replies of a *writer* are scored on any of five subjects, the writer included. Control sessions are identical except that the scores shown are random.
 
 ![In-context neurofeedback](assets/protocol.png)
 
@@ -57,8 +57,10 @@ To run the experiments and the build (Python 3.12, NVIDIA GPUs; the paper used o
 
 ```bash
 pip install -r requirements.txt
-bash vendor/apply_vllm_lens_patch.sh      # only needed for the prefix-cached reads of Experiment 2
+bash vendor/apply_vllm_lens_patch.sh      # prefix-cached reads of Experiment 2
 ```
+
+The patch lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects (see the settings below). Without the patch, vllm-lens ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
 
 Experiment 1 calls OpenRouter: put `OPENROUTER_API_KEY` in the environment or in a `.env` file at the root of the repository. Model weights are downloaded from the Hugging Face Hub.
 
@@ -101,11 +103,13 @@ Readouts and units are stored in the order in which the bootstraps of the paper 
 
 ## Running the experiments
 
-Each script loads one subject on one GPU, resumes where an interrupted run stopped, and accepts `--shard i --num-shards n` to split the work over several GPUs. Outputs are JSON lines, one per session.
+Each script loads one subject on one GPU and accepts `--shard i --num-shards n` to split the work over n processes, one per GPU (each with its own `CUDA_VISIBLE_DEVICES`). Outputs are JSON lines, one per session. A re-run skips the work already on disk: in Experiment 1 every (writer, arm) of a cell, in Experiments 2 and 3 every chunk of sessions, in Experiment 4 every monitor (an interrupted monitor restarts from its first turn).
 
 ```bash
-# Experiment 1: the writers other than the subject are called through OpenRouter, and OLMo through a vLLM server
-CUDA_VISIBLE_DEVICES=1 bash scripts/serve_olmo.sh &  export OLMO_URL=http://localhost:8000/v1
+# Experiment 1: the writers other than the subject are called through OpenRouter, and OLMo through a vLLM server on its own GPU
+CUDA_VISIBLE_DEVICES=1 bash scripts/serve_olmo.sh &
+export OLMO_URL=http://localhost:8000/v1
+until curl -s $OLMO_URL/models > /dev/null; do sleep 10; done     # wait for the server: failed calls are not retried
 python scripts/run_exp1.py --subject qwen3.5-27b --out outputs/exp1
 # Experiment 2
 python scripts/run_exp2.py --subject qwen3.5-27b --out outputs/exp2
@@ -124,6 +128,7 @@ Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `o
 Settings of the paper, set by default:
 
 - All generations are greedy. Experiment 1 caps the subject's own replies at 64 tokens and the API writers' at 128.
+- In Experiment 1, an API call is tried up to 3 times on transient errors; a call that still fails becomes an empty reply, recorded as a failed call (status 4 in `results/exp1.npz`), and a re-run does not retry it.
 - Experiment 2 reads with prefix caching (`vendor/`) for Qwen3.5-27B, GPT-OSS-20B, Mistral-Small-3.2-24B, OLMo-3.1-32B, Qwen3.5-9B and Qwen3.6-27B, and with full recomputation for the other four, after checking per subject that the two agree (`run_exp2.py --read-mode prefix_cache` or `full` overrides this). Gemma-4-12B also ran with vLLM's automatic prefix caching disabled, which `run_exp2.py` sets for it.
 - Experiment 4 budgets 2048 reasoning tokens per turn; GPT-OSS-20B reasons with `reasoning_effort=medium`.
 
@@ -154,14 +159,6 @@ python scripts/build/train_monitors.py --subject M       # -> artifacts/monitors
 python scripts/build/evaluate_monitors.py --subject M    # -> results/monitor_auroc.csv
 python scripts/build/select_monitor_sentences.py --subject M   # -> build/M/monitor_sentences/
 ```
-
-Some steps of the original build are only partly reproducible:
-
-- Qwen3.5-27B, Gemma-4-31B and GPT-OSS-20B were read without the turn-20 log-probabilities (`read_corpus.py --logprob-depths 0 5`), so their encoder-residual directions were screened without the log-probability criterion.
-- For the same three models, the diagnostics of how predictable each geometry readout is from the text (`pub_*` in the readouts, used only to select the sentences of Experiments 1 and 2) came from earlier exploratory runs with the same formulas; rebuilding them with `calibration_reads.py` gives values that differ at the level of vLLM's numerical noise.
-- As in the original build, the PCA of the corpus reads accumulates its Gram matrix in single precision, so the low-variance end of the spectrum depends on the BLAS library and its thread count, and the random directions of the band [1000, 3000) can come out different. For Qwen3.5-9B at d33, 1, 2 and 4 threads (`OMP_NUM_THREADS`) reproduce the released directions on our machines, and 3 threads selects two other candidates.
-- The monitors are trained with early stopping on a validation AUROC, so vLLM's numerical noise in the reads changes the trained probes slightly, and can change the selected layer when two layers are close: retraining the formality monitor of Qwen3.5-9B selects layer 22 instead of 25, with per-layer AUROCs within 0.013 of the released ones.
-- The last cut of the monitor sentences (the N sentences whose score at the first turn of Experiment 4 is closest to 60) was done by hand; `select_monitor_sentences.py` implements the rule, with N taken from the released pools, but not the order of the sentences.
 
 ## Data
 
