@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3.6-27B",
+ "concept": "morality",
+ "data": "ETHICS commonsense -> Moral Stories",
+ "num_layers": 64,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "19": {
+   "depth": 0.3016,
+   "val_auroc": 0.7996444444444444,
+   "test_auroc": 0.7745777777777779
+  },
+  "25": {
+   "depth": 0.3968,
+   "val_auroc": 0.8081777777777777,
+   "test_auroc": 0.8072888888888888
+  },
+  "32": {
+   "depth": 0.5079,
+   "val_auroc": 0.8197333333333333,
+   "test_auroc": 0.8533333333333334
+  },
+  "38": {
+   "depth": 0.6032,
+   "val_auroc": 0.8206222222222223,
+   "test_auroc": 0.8400000000000001
+  },
+  "44": {
+   "depth": 0.6984,
+   "val_auroc": 0.8304000000000001,
+   "test_auroc": 0.8419555555555556
+  },
+  "50": {
+   "depth": 0.7937,
+   "val_auroc": 0.7733333333333333,
+   "test_auroc": 0.8362666666666666
+  }
+ },
+ "selected_layer": 44,
+ "val_auroc": 0.8304000000000001,
+ "test_auroc": 0.8419555555555556
+}

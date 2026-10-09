@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurofeedback"
+version = "1.0.0"
+description = "In-context neurofeedback: can language models control their own activations?"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+# Enough to reproduce the figures and tables from results/.
+dependencies = ["numpy>=2.2", "matplotlib>=3.10", "pyyaml>=6"]
+
+[project.optional-dependencies]
+# Running the experiments (GPU): the versions used in the paper.
+experiments = [
+    "vllm==0.23.0",
+    "vllm-lens==1.1.0",
+    "transformers==5.12.1",
+    "openai==2.43.0",
+    "python-dotenv>=1.0",
+]
+# Rebuilding the readouts, the monitors and the sentence sets.
+build = ["datasets==5.0.0", "scikit-learn==1.9.0", "scipy>=1.15", "blingfire>=0.1.8", "joblib>=1.5"]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["neurofeedback", "neurofeedback.experiments"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

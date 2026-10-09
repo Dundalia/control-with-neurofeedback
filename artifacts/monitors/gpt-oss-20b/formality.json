@@ -1,0 +1,45 @@
+{
+ "model": "openai/gpt-oss-20b",
+ "concept": "formality",
+ "data": "Pavlick news+email -> blog+answers",
+ "num_layers": 24,
+ "n_train": 596,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "7": {
+   "depth": 0.3043,
+   "val_auroc": 0.9569777777777778,
+   "test_auroc": 0.9619555555555555
+  },
+  "9": {
+   "depth": 0.3913,
+   "val_auroc": 0.9297777777777778,
+   "test_auroc": 0.9431111111111111
+  },
+  "12": {
+   "depth": 0.5217,
+   "val_auroc": 0.9582222222222223,
+   "test_auroc": 0.9409777777777778
+  },
+  "14": {
+   "depth": 0.6087,
+   "val_auroc": 0.9557333333333333,
+   "test_auroc": 0.9536
+  },
+  "16": {
+   "depth": 0.6957,
+   "val_auroc": 0.9520000000000001,
+   "test_auroc": 0.9399111111111111
+  },
+  "18": {
+   "depth": 0.7826,
+   "val_auroc": 0.9502222222222222,
+   "test_auroc": 0.9498666666666666
+  }
+ },
+ "selected_layer": 12,
+ "val_auroc": 0.9582222222222223,
+ "test_auroc": 0.9409777777777778
+}

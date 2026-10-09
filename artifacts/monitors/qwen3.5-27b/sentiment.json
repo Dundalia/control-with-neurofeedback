@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3.5-27B",
+ "concept": "sentiment",
+ "data": "Yelp -> Rotten Tomatoes",
+ "num_layers": 64,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "19": {
+   "depth": 0.3016,
+   "val_auroc": 0.9457777777777778,
+   "test_auroc": 0.9041777777777777
+  },
+  "25": {
+   "depth": 0.3968,
+   "val_auroc": 0.9656888888888889,
+   "test_auroc": 0.9185777777777777
+  },
+  "32": {
+   "depth": 0.5079,
+   "val_auroc": 0.9843555555555555,
+   "test_auroc": 0.9573333333333334
+  },
+  "38": {
+   "depth": 0.6032,
+   "val_auroc": 0.9548444444444444,
+   "test_auroc": 0.9406222222222222
+  },
+  "44": {
+   "depth": 0.6984,
+   "val_auroc": 0.9743999999999999,
+   "test_auroc": 0.9576888888888888
+  },
+  "50": {
+   "depth": 0.7937,
+   "val_auroc": 0.9290666666666667,
+   "test_auroc": 0.9308444444444444
+  }
+ },
+ "selected_layer": 32,
+ "val_auroc": 0.9843555555555555,
+ "test_auroc": 0.9573333333333334
+}

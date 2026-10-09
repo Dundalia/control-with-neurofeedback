@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-12b-it",
+ "concept": "morality",
+ "data": "ETHICS commonsense -> Moral Stories",
+ "num_layers": 48,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "14": {
+   "depth": 0.2979,
+   "val_auroc": 0.6668444444444446,
+   "test_auroc": 0.72
+  },
+  "19": {
+   "depth": 0.4043,
+   "val_auroc": 0.7516444444444443,
+   "test_auroc": 0.8033777777777777
+  },
+  "24": {
+   "depth": 0.5106,
+   "val_auroc": 0.8378666666666666,
+   "test_auroc": 0.8684444444444445
+  },
+  "28": {
+   "depth": 0.5957,
+   "val_auroc": 0.8042666666666667,
+   "test_auroc": 0.8280888888888889
+  },
+  "33": {
+   "depth": 0.7021,
+   "val_auroc": 0.7982222222222222,
+   "test_auroc": 0.7808
+  },
+  "38": {
+   "depth": 0.8085,
+   "val_auroc": 0.7644444444444445,
+   "test_auroc": 0.7528888888888888
+  }
+ },
+ "selected_layer": 24,
+ "val_auroc": 0.8378666666666666,
+ "test_auroc": 0.8684444444444445
+}

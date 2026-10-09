@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-31B-it",
+ "concept": "truth",
+ "data": "Azaria & Mitchell -> FEVER",
+ "num_layers": 60,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "18": {
+   "depth": 0.3051,
+   "val_auroc": 0.6449777777777778,
+   "test_auroc": 0.5678222222222221
+  },
+  "24": {
+   "depth": 0.4068,
+   "val_auroc": 0.8014222222222223,
+   "test_auroc": 0.7169777777777779
+  },
+  "30": {
+   "depth": 0.5085,
+   "val_auroc": 0.9155555555555556,
+   "test_auroc": 0.8883555555555555
+  },
+  "35": {
+   "depth": 0.5932,
+   "val_auroc": 0.8933333333333334,
+   "test_auroc": 0.8622222222222222
+  },
+  "41": {
+   "depth": 0.6949,
+   "val_auroc": 0.8929777777777778,
+   "test_auroc": 0.8184888888888889
+  },
+  "47": {
+   "depth": 0.7966,
+   "val_auroc": 0.9086222222222222,
+   "test_auroc": 0.8206222222222223
+  }
+ },
+ "selected_layer": 30,
+ "val_auroc": 0.9155555555555556,
+ "test_auroc": 0.8883555555555555
+}

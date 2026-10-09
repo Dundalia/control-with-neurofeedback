@@ -1,0 +1,45 @@
+{
+ "model": "openai/gpt-oss-20b",
+ "concept": "deception",
+ "data": "RepE facts -> AI-Liar + roleplaying",
+ "num_layers": 24,
+ "n_train": 612,
+ "n_val": 197,
+ "n_test": 198,
+ "n_test_positive": 134,
+ "per_layer": {
+  "7": {
+   "depth": 0.3043,
+   "val_auroc": 0.5182336889109402,
+   "test_auroc": 0.5149253731343284
+  },
+  "9": {
+   "depth": 0.3913,
+   "val_auroc": 0.6032001984619201,
+   "test_auroc": 0.6266324626865671
+  },
+  "12": {
+   "depth": 0.5217,
+   "val_auroc": 0.7362937236417763,
+   "test_auroc": 0.7747784514925374
+  },
+  "14": {
+   "depth": 0.6087,
+   "val_auroc": 0.7645745472587447,
+   "test_auroc": 0.7819496268656716
+  },
+  "16": {
+   "depth": 0.6957,
+   "val_auroc": 0.7362937236417764,
+   "test_auroc": 0.6942630597014925
+  },
+  "18": {
+   "depth": 0.7826,
+   "val_auroc": 0.7108657901265194,
+   "test_auroc": 0.654151119402985
+  }
+ },
+ "selected_layer": 14,
+ "val_auroc": 0.7645745472587447,
+ "test_auroc": 0.7819496268656716
+}

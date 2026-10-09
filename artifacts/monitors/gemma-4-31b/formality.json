@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-31B-it",
+ "concept": "formality",
+ "data": "Pavlick news+email -> blog+answers",
+ "num_layers": 60,
+ "n_train": 596,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "18": {
+   "depth": 0.3051,
+   "val_auroc": 0.9329777777777778,
+   "test_auroc": 0.9624888888888888
+  },
+  "24": {
+   "depth": 0.4068,
+   "val_auroc": 0.9567999999999999,
+   "test_auroc": 0.9640888888888889
+  },
+  "30": {
+   "depth": 0.5085,
+   "val_auroc": 0.9210666666666667,
+   "test_auroc": 0.9496888888888889
+  },
+  "35": {
+   "depth": 0.5932,
+   "val_auroc": 0.9456000000000001,
+   "test_auroc": 0.9294222222222223
+  },
+  "41": {
+   "depth": 0.6949,
+   "val_auroc": 0.9052444444444445,
+   "test_auroc": 0.9208888888888889
+  },
+  "47": {
+   "depth": 0.7966,
+   "val_auroc": 0.9237333333333333,
+   "test_auroc": 0.9408000000000001
+  }
+ },
+ "selected_layer": 24,
+ "val_auroc": 0.9567999999999999,
+ "test_auroc": 0.9640888888888889
+}

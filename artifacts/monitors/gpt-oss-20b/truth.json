@@ -1,0 +1,45 @@
+{
+ "model": "openai/gpt-oss-20b",
+ "concept": "truth",
+ "data": "Azaria & Mitchell -> FEVER",
+ "num_layers": 24,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "7": {
+   "depth": 0.3043,
+   "val_auroc": 0.6705777777777778,
+   "test_auroc": 0.626311111111111
+  },
+  "9": {
+   "depth": 0.3913,
+   "val_auroc": 0.8,
+   "test_auroc": 0.7518222222222223
+  },
+  "12": {
+   "depth": 0.5217,
+   "val_auroc": 0.8848000000000001,
+   "test_auroc": 0.8026666666666666
+  },
+  "14": {
+   "depth": 0.6087,
+   "val_auroc": 0.8728888888888889,
+   "test_auroc": 0.8353777777777778
+  },
+  "16": {
+   "depth": 0.6957,
+   "val_auroc": 0.8976,
+   "test_auroc": 0.8645333333333333
+  },
+  "18": {
+   "depth": 0.7826,
+   "val_auroc": 0.8949333333333332,
+   "test_auroc": 0.853511111111111
+  }
+ },
+ "selected_layer": 16,
+ "val_auroc": 0.8976,
+ "test_auroc": 0.8645333333333333
+}

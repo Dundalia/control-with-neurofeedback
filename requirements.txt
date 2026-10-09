@@ -1,0 +1,17 @@
+# Full environment of the paper's runs (Python 3.12, CUDA 12.x/13). vLLM pulls a matching torch.
+#   pip install -r requirements.txt && bash vendor/apply_vllm_lens_patch.sh
+vllm==0.23.0
+vllm-lens==1.1.0
+transformers==5.12.1
+huggingface-hub==1.20.1
+datasets==5.0.0
+numpy==2.3.5
+scipy>=1.15
+scikit-learn==1.9.0
+joblib>=1.5
+blingfire>=0.1.8
+openai==2.43.0
+python-dotenv>=1.0
+pyyaml>=6
+matplotlib==3.10.9
+pytest>=8

@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-31B-it",
+ "concept": "deception",
+ "data": "RepE facts -> AI-Liar + roleplaying",
+ "num_layers": 60,
+ "n_train": 612,
+ "n_val": 197,
+ "n_test": 198,
+ "n_test_positive": 134,
+ "per_layer": {
+  "18": {
+   "depth": 0.3051,
+   "val_auroc": 0.5388241131232945,
+   "test_auroc": 0.5669309701492538
+  },
+  "24": {
+   "depth": 0.4068,
+   "val_auroc": 0.7516745224510047,
+   "test_auroc": 0.724580223880597
+  },
+  "30": {
+   "depth": 0.5085,
+   "val_auroc": 0.6177127263706276,
+   "test_auroc": 0.6233675373134329
+  },
+  "35": {
+   "depth": 0.5932,
+   "val_auroc": 0.6686926321012157,
+   "test_auroc": 0.652518656716418
+  },
+  "41": {
+   "depth": 0.6949,
+   "val_auroc": 0.47680476308608283,
+   "test_auroc": 0.5002332089552239
+  },
+  "47": {
+   "depth": 0.7966,
+   "val_auroc": 0.48846440089307863,
+   "test_auroc": 0.5360307835820896
+  }
+ },
+ "selected_layer": 24,
+ "val_auroc": 0.7516745224510047,
+ "test_auroc": 0.724580223880597
+}

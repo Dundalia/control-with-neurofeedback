@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3.5-27B",
+ "concept": "deception",
+ "data": "RepE facts -> AI-Liar + roleplaying",
+ "num_layers": 64,
+ "n_train": 612,
+ "n_val": 197,
+ "n_test": 198,
+ "n_test_positive": 134,
+ "per_layer": {
+  "19": {
+   "depth": 0.3016,
+   "val_auroc": 0.5994790374596873,
+   "test_auroc": 0.6568330223880597
+  },
+  "25": {
+   "depth": 0.3968,
+   "val_auroc": 0.7050359712230216,
+   "test_auroc": 0.7396222014925373
+  },
+  "32": {
+   "depth": 0.5079,
+   "val_auroc": 0.6686926321012157,
+   "test_auroc": 0.6729244402985075
+  },
+  "38": {
+   "depth": 0.6032,
+   "val_auroc": 0.6756387993053834,
+   "test_auroc": 0.6538013059701493
+  },
+  "44": {
+   "depth": 0.6984,
+   "val_auroc": 0.7186802282312081,
+   "test_auroc": 0.6909981343283582
+  },
+  "50": {
+   "depth": 0.7937,
+   "val_auroc": 0.7313321756387993,
+   "test_auroc": 0.7424207089552239
+  }
+ },
+ "selected_layer": 50,
+ "val_auroc": 0.7313321756387993,
+ "test_auroc": 0.7424207089552239
+}

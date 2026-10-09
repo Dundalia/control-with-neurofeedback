@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-31B-it",
+ "concept": "emotion",
+ "data": "dair-ai/emotion -> GoEmotions",
+ "num_layers": 60,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "18": {
+   "depth": 0.3051,
+   "val_auroc": 0.9296,
+   "test_auroc": 0.9240888888888888
+  },
+  "24": {
+   "depth": 0.4068,
+   "val_auroc": 0.8855111111111111,
+   "test_auroc": 0.8821333333333333
+  },
+  "30": {
+   "depth": 0.5085,
+   "val_auroc": 0.8670222222222221,
+   "test_auroc": 0.8403555555555555
+  },
+  "35": {
+   "depth": 0.5932,
+   "val_auroc": 0.8890666666666667,
+   "test_auroc": 0.8878222222222223
+  },
+  "41": {
+   "depth": 0.6949,
+   "val_auroc": 0.9064888888888889,
+   "test_auroc": 0.9061333333333333
+  },
+  "47": {
+   "depth": 0.7966,
+   "val_auroc": 0.8936888888888889,
+   "test_auroc": 0.8861333333333333
+  }
+ },
+ "selected_layer": 18,
+ "val_auroc": 0.9296,
+ "test_auroc": 0.9240888888888888
+}

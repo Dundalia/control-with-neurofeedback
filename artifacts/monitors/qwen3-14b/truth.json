@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3-14B",
+ "concept": "truth",
+ "data": "Azaria & Mitchell -> FEVER",
+ "num_layers": 40,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "12": {
+   "depth": 0.3077,
+   "val_auroc": 0.6378666666666667,
+   "test_auroc": 0.6704
+  },
+  "16": {
+   "depth": 0.4103,
+   "val_auroc": 0.7704888888888889,
+   "test_auroc": 0.7626666666666666
+  },
+  "20": {
+   "depth": 0.5128,
+   "val_auroc": 0.8488888888888889,
+   "test_auroc": 0.834488888888889
+  },
+  "23": {
+   "depth": 0.5897,
+   "val_auroc": 0.8862222222222222,
+   "test_auroc": 0.8908444444444443
+  },
+  "27": {
+   "depth": 0.6923,
+   "val_auroc": 0.8739555555555556,
+   "test_auroc": 0.8730666666666667
+  },
+  "31": {
+   "depth": 0.7949,
+   "val_auroc": 0.8778666666666667,
+   "test_auroc": 0.869688888888889
+  }
+ },
+ "selected_layer": 23,
+ "val_auroc": 0.8862222222222222,
+ "test_auroc": 0.8908444444444443
+}

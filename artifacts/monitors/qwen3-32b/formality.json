@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3-32B",
+ "concept": "formality",
+ "data": "Pavlick news+email -> blog+answers",
+ "num_layers": 64,
+ "n_train": 596,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "19": {
+   "depth": 0.3016,
+   "val_auroc": 0.9553777777777778,
+   "test_auroc": 0.9553777777777778
+  },
+  "25": {
+   "depth": 0.3968,
+   "val_auroc": 0.9649777777777778,
+   "test_auroc": 0.9584
+  },
+  "32": {
+   "depth": 0.5079,
+   "val_auroc": 0.9553777777777779,
+   "test_auroc": 0.9512888888888889
+  },
+  "38": {
+   "depth": 0.6032,
+   "val_auroc": 0.9544888888888888,
+   "test_auroc": 0.9532444444444446
+  },
+  "44": {
+   "depth": 0.6984,
+   "val_auroc": 0.9475555555555556,
+   "test_auroc": 0.9491555555555555
+  },
+  "50": {
+   "depth": 0.7937,
+   "val_auroc": 0.928711111111111,
+   "test_auroc": 0.9452444444444444
+  }
+ },
+ "selected_layer": 25,
+ "val_auroc": 0.9649777777777778,
+ "test_auroc": 0.9584
+}

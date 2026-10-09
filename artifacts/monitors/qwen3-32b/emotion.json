@@ -1,0 +1,45 @@
+{
+ "model": "Qwen/Qwen3-32B",
+ "concept": "emotion",
+ "data": "dair-ai/emotion -> GoEmotions",
+ "num_layers": 64,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "19": {
+   "depth": 0.3016,
+   "val_auroc": 0.9258666666666666,
+   "test_auroc": 0.9207111111111111
+  },
+  "25": {
+   "depth": 0.3968,
+   "val_auroc": 0.9032888888888889,
+   "test_auroc": 0.9192888888888889
+  },
+  "32": {
+   "depth": 0.5079,
+   "val_auroc": 0.896888888888889,
+   "test_auroc": 0.9025777777777778
+  },
+  "38": {
+   "depth": 0.6032,
+   "val_auroc": 0.8677333333333332,
+   "test_auroc": 0.9050666666666667
+  },
+  "44": {
+   "depth": 0.6984,
+   "val_auroc": 0.8794666666666667,
+   "test_auroc": 0.8657777777777778
+  },
+  "50": {
+   "depth": 0.7937,
+   "val_auroc": 0.9059555555555556,
+   "test_auroc": 0.9043555555555556
+  }
+ },
+ "selected_layer": 19,
+ "val_auroc": 0.9258666666666666,
+ "test_auroc": 0.9207111111111111
+}

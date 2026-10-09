@@ -1,0 +1,16 @@
+# generated
+/build/
+/outputs/
+/figures/
+/tables/
+*.tmp.npz
+*.tmp
+
+# secrets (OPENROUTER_API_KEY, HF_TOKEN)
+.env
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/

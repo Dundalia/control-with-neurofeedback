@@ -1,0 +1,45 @@
+{
+ "model": "google/gemma-4-31B-it",
+ "concept": "sentiment",
+ "data": "Yelp -> Rotten Tomatoes",
+ "num_layers": 60,
+ "n_train": 600,
+ "n_val": 150,
+ "n_test": 150,
+ "n_test_positive": 75,
+ "per_layer": {
+  "18": {
+   "depth": 0.3051,
+   "val_auroc": 0.8910222222222223,
+   "test_auroc": 0.9050666666666668
+  },
+  "24": {
+   "depth": 0.4068,
+   "val_auroc": 0.9610666666666667,
+   "test_auroc": 0.9299555555555554
+  },
+  "30": {
+   "depth": 0.5085,
+   "val_auroc": 0.9248000000000001,
+   "test_auroc": 0.8995555555555557
+  },
+  "35": {
+   "depth": 0.5932,
+   "val_auroc": 0.9422222222222222,
+   "test_auroc": 0.9274666666666667
+  },
+  "41": {
+   "depth": 0.6949,
+   "val_auroc": 0.9249777777777778,
+   "test_auroc": 0.8949333333333334
+  },
+  "47": {
+   "depth": 0.7966,
+   "val_auroc": 0.9548444444444445,
+   "test_auroc": 0.8741333333333334
+  }
+ },
+ "selected_layer": 24,
+ "val_auroc": 0.9610666666666667,
+ "test_auroc": 0.9299555555555554
+}

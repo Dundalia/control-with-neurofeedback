@@ -1,0 +1,78 @@
+# Prompts of Experiments 1 and 2 (paper, Appendix "Prompts").
+# Placeholders filled at run time: {objective_line}, {subject} (display name of the subject),
+# {readout_description}, {fixed_sentence}, {score}.
+
+exp1:
+  hidden: "Let's play a game. Each turn, reply with a SINGLE sentence of 10 to 20 words. I will score your sentence by a hidden criterion; scores are typically between 0 and 100 but can fall outside that range. {objective_line} Note: the scoring is not perfectly stable over time — the same sentence can receive different scores on different turns. Reply with only the sentence — no quotes, no explanation, no comments about the game or the score."
+  disclosed: "Let's play a game. Each turn, reply with a SINGLE sentence of 10 to 20 words. I will score your sentence. The score is computed from {subject}'s internal activations as the sentence is processed: specifically, it measures {readout_description}. Scores are typically between 0 and 100 but can fall outside that range. {objective_line} Note: the scoring is not perfectly stable over time — the same sentence can receive different scores on different turns. Reply with only the sentence — no quotes, no explanation, no comments about the game or the score."
+
+# Experiment 2 changes only the instructions: the reply is a fixed sentence, and under
+# disclosure the score is computed from "your" activations.
+exp2:
+  hidden: "Let's play a game. Each turn, you must reply with EXACTLY the following sentence: '{fixed_sentence}'. I will score your sentence by a hidden criterion; scores are typically between 0 and 100 but can fall outside that range. {objective_line} Note: the scoring is not perfectly stable over time — the same sentence can receive different scores on different turns. Reply with only that sentence — no quotes, no explanation, no comments about the game or the score."
+  disclosed: "Let's play a game. Each turn, you must reply with EXACTLY the following sentence: '{fixed_sentence}'. I will score your sentence. The score is computed from your internal activations as the sentence is processed: specifically, it measures {readout_description}. Scores are typically between 0 and 100 but can fall outside that range. {objective_line} Note: the scoring is not perfectly stable over time — the same sentence can receive different scores on different turns. Reply with only that sentence — no quotes, no explanation, no comments about the game or the score."
+
+objective_line:
+  max: "Your goal is to make the score as HIGH as possible."
+  min: "Your goal is to make the score as LOW as possible."
+
+feedback: "Score: {score}"
+
+# Experiment 1 only: the reply to a sentence outside the 10-20 word band.
+invalid_reply: "Invalid: reply with a single sentence of 10 to 20 words. Score withheld."
+
+# Context of the reads used to build the readouts and their Experiment 1 calibration
+# (scripts/build): the instructions of an earlier version of the game, as the only
+# user message, followed by random-score turns.
+build_context: |
+  Let's play a game. Each turn, reply with a SINGLE sentence of your choice. I will
+  score your sentence by a hidden criterion; scores are typically between 0 and 100
+  but can fall outside that range. {objective_line}
+  Note: the scoring is not perfectly stable over time — the same sentence can
+  receive different scores on different turns.
+  Reply with only the sentence — no quotes, no explanation.
+
+# Inserted as {readout_description} under disclosure, one per readout.
+readout_descriptions:
+  probe_sentiment_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with the direction a trained classifier uses to detect positive versus negative sentiment"
+  probe_morality_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with the direction a trained classifier uses to detect descriptions of morally acceptable versus unacceptable behavior"
+  probe_truth_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with the direction a trained classifier uses to detect true versus false statements"
+  probe_sentiment_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with the direction a trained classifier uses to detect positive versus negative sentiment"
+  probe_morality_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with the direction a trained classifier uses to detect descriptions of morally acceptable versus unacceptable behavior"
+  probe_truth_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with the direction a trained classifier uses to detect true versus false statements"
+  pcband_20_200_1_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying among principal components 20 to 200 of the network's typical sentence activations"
+  pcband_20_200_2_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying among principal components 20 to 200 of the network's typical sentence activations"
+  pcband_200_1000_1_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying among principal components 200 to 1000 of the network's typical sentence activations"
+  pcband_200_1000_2_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying among principal components 200 to 1000 of the network's typical sentence activations"
+  pcband_1000_3000_1_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying beyond the first 1000 principal components of the network's typical sentence activations"
+  pcband_1000_3000_2_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed direction lying beyond the first 1000 principal components of the network's typical sentence activations"
+  pcband_20_200_1_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying among principal components 20 to 200 of the network's typical sentence activations"
+  pcband_20_200_2_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying among principal components 20 to 200 of the network's typical sentence activations"
+  pcband_200_1000_1_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying among principal components 200 to 1000 of the network's typical sentence activations"
+  pcband_200_1000_2_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying among principal components 200 to 1000 of the network's typical sentence activations"
+  pcband_1000_3000_1_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying beyond the first 1000 principal components of the network's typical sentence activations"
+  pcband_1000_3000_2_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed direction lying beyond the first 1000 principal components of the network's typical sentence activations"
+  encres_pc1_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with the strongest direction of the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_pc2_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with the second-strongest direction of the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand1_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand2_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand3_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand4_d33: "how strongly the sentence's activations, about one-third of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_pc1_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with the strongest direction of the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_pc2_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with the second-strongest direction of the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand1_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand2_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand3_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  encres_rand4_d66: "how strongly the sentence's activations, about two-thirds of the way through the network, align with a fixed random direction chosen in the part of the activations that a separate encoder language model cannot reconstruct from the sentence's words"
+  curvature_step1_d33: "how sharply the activation trajectory turns from one token of the sentence to the next, about one-third of the way through the network (the average turning angle between consecutive steps)"
+  curvature_step2_d33: "how sharply the activation trajectory turns across the sentence when measured over steps of two tokens, about one-third of the way through the network (the average turning angle between consecutive two-token steps)"
+  curvature_step3_d33: "how sharply the activation trajectory turns across the sentence when measured over steps of three tokens, about one-third of the way through the network (the average turning angle between consecutive three-token steps)"
+  step_change_d33: "how abruptly the activation trajectory changes from token to token, about one-third of the way through the network (the average size of the change between consecutive steps, relative to the step size)"
+  curvature_step1_d66: "how sharply the activation trajectory turns from one token of the sentence to the next, about two-thirds of the way through the network (the average turning angle between consecutive steps)"
+  curvature_step2_d66: "how sharply the activation trajectory turns across the sentence when measured over steps of two tokens, about two-thirds of the way through the network (the average turning angle between consecutive two-token steps)"
+  curvature_step3_d66: "how sharply the activation trajectory turns across the sentence when measured over steps of three tokens, about two-thirds of the way through the network (the average turning angle between consecutive three-token steps)"
+  step_change_d66: "how abruptly the activation trajectory changes from token to token, about two-thirds of the way through the network (the average size of the change between consecutive steps, relative to the step size)"
+  curvature_diff_44_33: "how much sharper or gentler the activation trajectory's token-to-token turning becomes between 33% and 44% of the way through the network (deeper minus shallower)"
+  curvature_diff_55_44: "how much sharper or gentler the activation trajectory's token-to-token turning becomes between 44% and 55% of the way through the network (deeper minus shallower)"
+  curvature_diff_66_55: "how much sharper or gentler the activation trajectory's token-to-token turning becomes between 55% and 66% of the way through the network (deeper minus shallower)"
+  curvature_diff_66_33: "how much sharper or gentler the activation trajectory's token-to-token turning becomes between 33% and 66% of the way through the network (deeper minus shallower)"
