@@ -37,7 +37,7 @@ def kmeans_best(candidates, score, emb, k):
 
 
 def main():
-    texts = [json.loads(l)["text"] for l in open(REPO / "data" / "c4_corpus_20k.jsonl")]
+    texts = [json.loads(line)["text"] for line in open(REPO / "data" / "c4_corpus_20k.jsonl")]
     wc = np.array([len(texts[i].split()) for i in range(N_PUBLIC)])
     V = np.vstack([np.load(REPO / "artifacts" / "readouts" / f"{m}.npz")["pub_values"] for m in EXP1_MODELS])
     idx = np.where((wc >= BAND[0]) & (wc <= BAND[1]) & ~np.isnan(V).any(0))[0]

@@ -3,9 +3,27 @@ run on CPU. Activations depend only on the token prefix, generations only on the
 import hashlib
 
 import numpy as np
-import torch
 
 from neurofeedback.backend import VLLMBackend
+
+class Tensor(np.ndarray):
+    """A numpy array with the few torch.Tensor methods the backend calls on vllm-lens output."""
+
+    def dim(self):
+        return self.ndim
+
+    def unsqueeze(self, axis):
+        return np.expand_dims(self, axis)
+
+    def float(self):
+        return self.astype(np.float32)
+
+    def cpu(self):
+        return self
+
+    def numpy(self):
+        return np.asarray(self)
+
 
 WORDS = ("the quiet river carried old songs past every sleeping village under a pale autumn moon "
          "while distant bells answered lonely travelers searching for warm bread and honest friends").split()
@@ -66,7 +84,7 @@ class FakeLLM:
         hs = hs[-self.keep:]
         out = np.stack([np.stack([np.random.default_rng(h(x, layer)).standard_normal(self.hidden) + 0.3 * li
                                   for x in hs]) for li, layer in enumerate(layers)]).astype(np.float32)
-        return torch.from_numpy(out)
+        return out.view(Tensor)
 
     def _text(self, ids, sp):
         k = h(tuple(ids))

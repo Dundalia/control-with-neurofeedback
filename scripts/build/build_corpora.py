@@ -165,7 +165,7 @@ def corpus_ok(s):
 
 
 def build_corpus():
-    excl = {json.loads(l)["text"].casefold() for l in open(DATA / "c4_reference_256.jsonl")}
+    excl = {json.loads(line)["text"].casefold() for line in open(DATA / "c4_reference_256.jsonl")}
     probes = json.load(open(DATA / "concept_probe_sentences.json"))
     excl |= {r["text"].casefold() for blk in probes["concepts"].values() for r in blk["sentences"]}
     rng = random.Random(SEED)

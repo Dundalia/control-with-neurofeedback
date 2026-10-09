@@ -4,6 +4,10 @@ Code and data for *Cross-Model In-Context Neurofeedback Reveals (Limited) Activa
 
 In an in-context neurofeedback session, a model is asked to maximize or minimize a score, and at every turn it is shown the score of its last reply: a *readout* of its own activations. Control sessions are identical except that the scores shown are random.
 
+![In-context neurofeedback](assets/protocol.png)
+
+*Top: a model is instructed to maximize (or minimize) a score. At every turn, the score is a readout of the activations of a subject S on the last sentence, and it is shown back as the next user message. In Experiment 1, a writer W, possibly different from S, is allowed to freely generate the sentences, which are teacher-forced into S to compute the readout. In Experiment 2, W = S, and S is always prefilled a fixed sentence. Bottom: we repeat the fixed-sentence experiment but against activation monitors, on sentences the monitor would flag, such as a false sentence for a truthfulness monitor, without (Experiment 3) and with (Experiment 4) a chain of thought.*
+
 - **Experiment 1 (free generation).** A writer generates the sentences and a subject's activations are scored, for 5 writers x 5 subjects (each model also writing for itself), 42 readouts, 20 turns.
 - **Experiment 2 (fixed sentence).** The subject's reply is a fixed sentence, teacher-forced at every turn; 10 models, 42 readouts, 30 turns.
 - **Experiment 3 (monitors).** As Experiment 2, but the score is an activation monitor (truthfulness, deception, sentiment, emotion, morality, formality) on sentences it flags; 8 models, 20 turns.
@@ -25,7 +29,7 @@ prompts/                  every model-facing string
 scripts/
   run_exp{1,2,3,4}.py     run an experiment for one subject
   serve_olmo.sh           OLMo as a writer of Experiment 1 (it is not on OpenRouter)
-  collect_results.py      session records -> results/
+  collect_results.py      session records -> outputs/results/
   figures/                the figures of the paper
   tables.py               the tables of the appendix
   check_monitor_compliance.py   the compliance test before Experiments 3 and 4
@@ -36,15 +40,18 @@ artifacts/monitors/       the monitors of each model
 results/                  the processed results of the paper's runs (see below)
 vendor/                   patch of vllm-lens for the prefix-cached reads of Experiment 2
 tests/                    tests (CPU only)
+assets/                   the figure above
 ```
 
 ## Installation
 
-To reproduce the figures and tables from the released results (CPU, Python >= 3.10):
+To reproduce the figures and tables from the released results and run the tests (CPU, Python >= 3.10):
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
+
+The install must be editable (`-e`): the code reads `prompts/`, `artifacts/` and `results/` from the repository.
 
 To run the experiments and the build (Python 3.12, NVIDIA GPUs; the paper used one A100 80GB per model):
 
@@ -79,7 +86,7 @@ pytest                                  # includes checks against the numbers of
 | Table "AUROC of the 48 monitors" | `tables/monitors.tex` |
 | Tables "Compliance in Experiment 1", "Chain of thought in Experiment 4", "Compliance test" | `tables/compliance_*.tex` |
 
-With matplotlib 3.10.9, the figures are identical to those of the paper, except for tiny shifts of the points of `exp1_fit.pdf`, as the results of Experiment 1 are stored in single precision, and the tick labels of `exp1_grid.pdf`, which now use the model names.
+With the pinned matplotlib 3.10.9, the figures are identical to those of the paper (the PDFs differ only in their creation date), except for tiny shifts of the points of `exp1_fit.pdf`, as the results of Experiment 1 are stored in single precision, and the tick labels of `exp1_grid.pdf`, which now use the model names.
 
 ### The released results
 
@@ -105,23 +112,26 @@ python scripts/run_exp2.py --subject qwen3.5-27b --out outputs/exp2
 # Experiments 3 and 4
 python scripts/run_exp3.py --subject qwen3.5-27b --out outputs/exp3
 python scripts/run_exp4.py --subject qwen3.5-27b --out outputs/exp4
-# then, for each experiment
-python scripts/collect_results.py --exp 2 --outputs outputs/exp2
+# then, for each experiment: collect the session records and make the figures from them
+python scripts/collect_results.py --exp 2 --outputs outputs/exp2 --results outputs/results
+python scripts/figures/exp2.py --results outputs/results
 ```
+
+`collect_results.py` writes to `outputs/results/` by default, so the released `results/` are never overwritten; the figure and table scripts read `results/` unless given `--results`, and expect there everything they read: the results of every model of the experiment, both `exp3.npz` and `exp4.npz` for `exp3_exp4.py`, and also `monitor_auroc.csv` and `monitor_preflight.jsonl` for `tables.py`.
 
 Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `olmo-3.1-32b` (Experiments 1 and 2), `qwen3-32b`, `qwen3-14b`, `gemma-4-12b`, `qwen3.5-9b`, `qwen3.6-27b` (Experiment 2), and the 8 models with a native chain of thought for Experiments 3 and 4 (all but Mistral and OLMo).
 
 Settings of the paper, set by default:
 
 - All generations are greedy. Experiment 1 caps the subject's own replies at 64 tokens and the API writers' at 128.
-- Experiment 2 reads with prefix caching (`vendor/`) for Qwen3.5-27B, GPT-OSS-20B, Mistral-Small-3.2-24B, OLMo-3.1-32B, Qwen3.5-9B and Qwen3.6-27B, and with full recomputation for the other four, after checking per subject that the two agree; Gemma-4-12B also ran with vLLM's prefix caching disabled (`run_exp2.py --read-mode`).
+- Experiment 2 reads with prefix caching (`vendor/`) for Qwen3.5-27B, GPT-OSS-20B, Mistral-Small-3.2-24B, OLMo-3.1-32B, Qwen3.5-9B and Qwen3.6-27B, and with full recomputation for the other four, after checking per subject that the two agree (`run_exp2.py --read-mode prefix_cache` or `full` overrides this). Gemma-4-12B also ran with vLLM's automatic prefix caching disabled, which `run_exp2.py` sets for it.
 - Experiment 4 budgets 2048 reasoning tokens per turn; GPT-OSS-20B reasons with `reasoning_effort=medium`.
 
 Greedy decoding with vLLM is not bitwise reproducible across batch compositions, and OpenRouter routes the same request to different providers (logged per turn), so a re-run reproduces the paper's sessions only up to this noise.
 
 ## Rebuilding the readouts, the monitors and the sentence sets
 
-The released `artifacts/` and `data/` are what the runs used; `scripts/build/` documents how they were made and can rebuild them. Intermediates go to `build/` (several GB per model).
+The released `artifacts/` and `data/` are what the runs used; `scripts/build/` documents how they were made and rebuilds them in place. `build_corpora.py`, `concept_probes.py --prepare` and `select_sentences.py` overwrite files in `data/`; `readouts.py --stage finalize`, `calibrate_exp2.py` and `train_monitors.py` overwrite files in `artifacts/`; `evaluate_monitors.py` overwrites `results/monitor_auroc.csv`. `build_corpora.py`, `readouts.py` and `evaluate_monitors.py` write elsewhere with `--out`. `git diff` compares them with the released versions and `git checkout` restores them. Everything else, including the monitor sentences selected by `select_monitor_sentences.py`, goes to `build/` (several GB per model; the environment variable `BUILD_DIR` moves it).
 
 ```bash
 # shared (CPU, except the embedding)
@@ -138,11 +148,11 @@ python scripts/build/calibration_reads.py --subject M    # GPU
 python scripts/build/readouts.py --stage finalize --subject M     # -> artifacts/readouts/M.npz
 python scripts/build/calibrate_exp2.py --subject M       # GPU -> artifacts/readouts/M.exp2_calibration.npz
 # sentences of Experiments 1 and 2, from the five models of Experiment 1
-python scripts/build/select_sentences.py
+python scripts/build/select_sentences.py                 # data/exp1_opening_sentences.jsonl, data/exp2_fixed_sentences.jsonl
 # monitors and their sentences (GPU)
-python scripts/build/train_monitors.py --subject M
-python scripts/build/evaluate_monitors.py --subject M
-python scripts/build/select_monitor_sentences.py --subject M
+python scripts/build/train_monitors.py --subject M       # -> artifacts/monitors/M/
+python scripts/build/evaluate_monitors.py --subject M    # -> results/monitor_auroc.csv
+python scripts/build/select_monitor_sentences.py --subject M   # -> build/M/monitor_sentences/
 ```
 
 Some steps of the original build are only partly reproducible:

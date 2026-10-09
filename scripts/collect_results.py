@@ -2,7 +2,10 @@
 """Collect the session records written by scripts/run_exp*.py into the compact arrays of
 results/ that the figure and table scripts read.
 
-    python scripts/collect_results.py --exp 2 --outputs outputs/exp2 [--results results]
+    python scripts/collect_results.py --exp 2 --outputs outputs/exp2 --results outputs/results
+
+The default --results is outputs/results, so that the released results/ are not overwritten;
+the figure and table scripts read another directory with their own --results.
 
 The released results/ were collected from the paper's runs. Units of Experiments 3 and 4 are
 stored there in the order the paper's analysis met them; this script stores them sorted by
@@ -139,7 +142,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--exp", type=int, choices=[1, 2, 3, 4], required=True)
     ap.add_argument("--outputs", required=True, help="the --out directory of scripts/run_exp<N>.py")
-    ap.add_argument("--results", default=str(REPO / "results"))
+    ap.add_argument("--results", default=str(REPO / "outputs" / "results"),
+                    help="where to write exp<N>.npz (the released ones are in results/)")
     a = ap.parse_args()
     arrays = {1: lambda: collect_exp1(a.outputs), 2: lambda: collect_exp2(a.outputs),
               3: lambda: collect_monitor(a.outputs, 20, cot=False),

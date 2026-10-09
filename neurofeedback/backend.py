@@ -23,8 +23,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 
-import torch
-
 
 @dataclass
 class FamilyConfig:
@@ -165,8 +163,8 @@ class VLLMBackend:
 
     @staticmethod
     def _captured(output):
-        a = output.activations["residual_stream"]
-        return a if isinstance(a, torch.Tensor) else torch.as_tensor(a)
+        """The [n_layers, seq, hidden] torch tensor that vllm-lens attaches to an output."""
+        return output.activations["residual_stream"]
 
     def read_residual_multi_batch(self, items, layers, enable_thinking=False,
                                   allow_prefix_cache=False):

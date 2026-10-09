@@ -5,6 +5,7 @@
   figures/exp2_effects.pdf    appendix: control effect at turn 30 per model and objective
   figures/exp2_readouts.pdf   appendix: objective difference at turn 30 per readout
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from matplotlib.lines import Line2D
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from neurofeedback.analysis import SIGN, Exp2, bootstrap_curve, bootstrap_mean  # noqa: E402
+from neurofeedback.analysis import RESULTS, SIGN, Exp2, bootstrap_curve, bootstrap_mean  # noqa: E402
 from style import (C_DISCLOSED, C_HIDDEN, DISPLAY, FIGURE_ORDER, GRID, LINE_COLOR, ZERO,  # noqa: E402
                    apply_style, clean_axes, end_labels, save)
 
@@ -169,9 +170,12 @@ def readouts_figure(e2):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--results", default=str(RESULTS), help="directory of exp2.npz (default: results/)")
+    a = ap.parse_args()
     apply_style()
     OUT.mkdir(exist_ok=True)
-    e2 = Exp2()
+    e2 = Exp2(a.results)
     results_figure(e2)
     effects_figure(e2)
     readouts_figure(e2)

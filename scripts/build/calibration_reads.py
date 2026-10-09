@@ -43,7 +43,7 @@ def read_spans(backend, items, layers):
     out = []
     for r in backend.read_residual_multi_batch(items, lay):
         H = r.numpy().astype(np.float64)
-        out.append({d: H[lay.index(l)] for d, l in layers.items()})
+        out.append({d: H[lay.index(layer)] for d, layer in layers.items()})
     return out
 
 
@@ -59,7 +59,7 @@ def main():
     layers = {d: backend.layer_for_depth(x) for d, x in ANCHOR_DEPTHS.items()}
     assert all(layers[d] == int(directions[f"layer_{d}"]) for d in ("d33", "d66"))
 
-    ref = [json.loads(l)["text"] for l in open(REPO / "data" / "c4_reference_256.jsonl")]
+    ref = [json.loads(line)["text"] for line in open(REPO / "data" / "c4_reference_256.jsonl")]
     raws = np.full((len(readouts), len(ref)), np.nan)
     n_tokens = np.zeros(len(ref), np.int32)
     for i0 in range(0, len(ref), a.chunk):
@@ -72,9 +72,9 @@ def main():
         print(f"[calibration] {a.subject}: {idx[-1] + 1}/{len(ref)}", flush=True)
     np.savez(out_dir / "calibration_reads.npz", raws=raws, readout_ids=np.array([r.id for r in readouts]),
              n_tokens=n_tokens, num_layers=np.array(backend.num_layers),
-             **{f"layer_{d}": np.array(l) for d, l in layers.items()})
+             **{f"layer_{d}": np.array(layer) for d, layer in layers.items()})
 
-    corpus = sorted((json.loads(l) for l in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
+    corpus = sorted((json.loads(line) for line in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
     corpus = corpus[:N_PUBLIC]
     geometry = [r for r in readouts if r.family == "geometry"]
     vals = {r.id: np.full(N_PUBLIC, np.nan) for r in geometry}

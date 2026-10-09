@@ -30,7 +30,7 @@ def main():
     ap.add_argument("--subject", required=True)
     a = ap.parse_args()
     readouts = ReadoutSet(a.subject, calibration="exp1")       # only the raw values are used
-    texts = [json.loads(l)["text"] for l in open(REPO / "data" / "c4_reference_256.jsonl")]
+    texts = [json.loads(line)["text"] for line in open(REPO / "data" / "c4_reference_256.jsonl")]
     items = [([{"role": "user", "content": prompts.exp2_instructions("hidden", corpus_objective(i), t,
                                                                      readouts.ids[0])}], t)
              for i, t in enumerate(texts)]

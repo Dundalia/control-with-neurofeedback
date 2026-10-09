@@ -57,7 +57,7 @@ def main():
                     help="lower it for large-vocabulary models (Gemma-4-12B: 0.70)")
     a = ap.parse_args()
     out = model_dir(a.subject) / "corpus_reads.npz"
-    rows = sorted((json.loads(l) for l in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
+    rows = sorted((json.loads(line) for line in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
     N = len(rows)
     sub_idx = np.sort(np.random.default_rng(0).permutation(N)[:N_LOGPROB_SUB]).astype(np.int32)
     backend = load_backend(a.subject, gpu_memory_utilization=a.gpu_memory_utilization)
@@ -65,7 +65,7 @@ def main():
     order = sorted(layers, key=lambda d: layers[d])
     store = dict(np.load(out)) if out.exists() else {}
     store.update({"ids": np.array([r["id"] for r in rows], np.int32), "lp_sub_idx": sub_idx,
-                  **{f"layer_{d}": np.array(l) for d, l in layers.items()}})
+                  **{f"layer_{d}": np.array(layer) for d, layer in layers.items()}})
 
     def conv(i, k):
         return build_conversation(corpus_objective(rows[i]["id"]), rows[i]["text"],

@@ -295,13 +295,13 @@ def splits(concept, seed=0, ood_cap=None):
 # ---- probe ---------------------------------------------------------------------------------
 
 def collect_reads(backend, rows, layers, chunk=48):
-    acts = {l: [None] * len(rows) for l in layers}
+    acts = {layer: [None] * len(rows) for layer in layers}
     for i in range(0, len(rows), chunk):
         reads = backend.read_residual_multi_batch([(m, r) for (m, r, _, _) in rows[i:i + chunk]], layers)
         for j, read in enumerate(reads):
             arr = read.numpy()
-            for li, l in enumerate(sorted(layers)):
-                acts[l][i + j] = arr[li].astype(np.float16)
+            for li, layer in enumerate(sorted(layers)):
+                acts[layer][i + j] = arr[li].astype(np.float16)
         print(f"[reads] {min(i + chunk, len(rows))}/{len(rows)}", flush=True)
     return acts, np.array([lab for (_, _, lab, _) in rows], np.int64), np.array([g for (_, _, _, g) in rows])
 
@@ -387,7 +387,8 @@ def train_probe(acts_tr, y_tr, acts_va, y_va, lr=1e-3, batch=16, seed=0, max_epo
 def train(backend, model, concept, chunk=48):
     tr, val, test = splits(concept)
     nlay = backend.num_layers
-    band = [l for l in sorted({backend.layer_for_depth(d) for d in DEPTHS}) if BAND[0] <= l / (nlay - 1) <= BAND[1]]
+    band = [layer for layer in sorted({backend.layer_for_depth(d) for d in DEPTHS})
+            if BAND[0] <= layer / (nlay - 1) <= BAND[1]]
     tr_acts, y_tr, g_tr = collect_reads(backend, tr, band, chunk)
     val_acts, y_val, _ = collect_reads(backend, val, band, chunk)
     test_acts, y_test, _ = collect_reads(backend, test, band, chunk)
@@ -397,13 +398,16 @@ def train(backend, model, concept, chunk=48):
     is_va = np.array([int(g) in va_g for g in g_tr])
     tri, vai = np.where(~is_va)[0], np.where(is_va)[0]
     per_layer, params = {}, {}
-    for l in band:
-        scorer, p = train_probe([tr_acts[l][i] for i in tri], y_tr[tri], [tr_acts[l][i] for i in vai], y_tr[vai])
-        per_layer[str(l)] = {"depth": round(l / (nlay - 1), 4), "val_auroc": auroc(scorer(val_acts[l]), y_val),
-                             "test_auroc": auroc(scorer(test_acts[l]), y_test)}
-        params[l] = p
-        print(f"[monitor] {model} {concept} layer {l}: {per_layer[str(l)]}", flush=True)
-    sel = max(band, key=lambda l: per_layer[str(l)]["val_auroc"] if not np.isnan(per_layer[str(l)]["val_auroc"]) else -9)
+    for layer in band:
+        scorer, p = train_probe([tr_acts[layer][i] for i in tri], y_tr[tri],
+                                [tr_acts[layer][i] for i in vai], y_tr[vai])
+        per_layer[str(layer)] = {"depth": round(layer / (nlay - 1), 4),
+                                 "val_auroc": auroc(scorer(val_acts[layer]), y_val),
+                                 "test_auroc": auroc(scorer(test_acts[layer]), y_test)}
+        params[layer] = p
+        print(f"[monitor] {model} {concept} layer {layer}: {per_layer[str(layer)]}", flush=True)
+    sel = max(band, key=lambda layer: per_layer[str(layer)]["val_auroc"]
+              if not np.isnan(per_layer[str(layer)]["val_auroc"]) else -9)
     out = REPO / "artifacts" / "monitors" / model
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / f"{concept}.npz", layer=np.array(sel), **params[sel])

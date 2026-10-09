@@ -6,6 +6,7 @@
   figures/exp3_monitors.pdf    appendix: Experiment 3, objective difference per monitor
   figures/exp4_monitors.pdf    appendix: Experiment 4, objective difference per monitor
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from matplotlib.lines import Line2D
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from neurofeedback.analysis import MonitorResults, bootstrap_mean  # noqa: E402
+from neurofeedback.analysis import RESULTS, MonitorResults, bootstrap_mean  # noqa: E402
 from style import (C_DISCLOSED, C_HIDDEN, DISPLAY, FIGURE_ORDER, GRID, LINE_COLOR, ZERO,  # noqa: E402
                    apply_style, clean_axes, end_labels, save)
 
@@ -140,9 +141,12 @@ def monitors_figure(res, exp):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--results", default=str(RESULTS), help="directory of exp3.npz and exp4.npz (default: results/)")
+    a = ap.parse_args()
     apply_style()
     OUT.mkdir(exist_ok=True)
-    r3, r4 = MonitorResults("exp3"), MonitorResults("exp4")
+    r3, r4 = MonitorResults("exp3", a.results), MonitorResults("exp4", a.results)
 
     fig, (a3, a4) = plt.subplots(1, 2, figsize=(17, 6.0), constrained_layout=True)
     turn_panel(a3, r3)

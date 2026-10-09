@@ -25,7 +25,7 @@ def main():
     import torch
     from transformers import AutoModel, AutoTokenizer
 
-    rows = sorted((json.loads(l) for l in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
+    rows = sorted((json.loads(line) for line in open(REPO / "data" / "c4_corpus_20k.jsonl")), key=lambda r: r["id"])
     texts = [r["text"] for r in rows]
     tok = AutoTokenizer.from_pretrained(ENCODER, revision=REVISION, padding_side="left")
     model = AutoModel.from_pretrained(ENCODER, revision=REVISION, dtype=torch.float16).cuda().eval()

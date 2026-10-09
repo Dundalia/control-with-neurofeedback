@@ -7,6 +7,7 @@
   tables/compliance_preflight.tex Table "Compliance test before the monitor experiments"
                                   (results/monitor_preflight.jsonl)
 """
+import argparse
 import csv
 import json
 import sys
@@ -17,7 +18,7 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from neurofeedback.analysis import load  # noqa: E402
+from neurofeedback.analysis import RESULTS, load  # noqa: E402
 from neurofeedback.monitors import CONCEPTS  # noqa: E402
 
 OUT = REPO / "tables"
@@ -33,8 +34,8 @@ def f1(x):
     return f"{x:.1f}"
 
 
-def monitors_table():
-    rows = {(r["model"], r["monitor"]): r for r in csv.DictReader(open(REPO / "results" / "monitor_auroc.csv"))}
+def monitors_table(results):
+    rows = {(r["model"], r["monitor"]): r for r in csv.DictReader(open(Path(results) / "monitor_auroc.csv"))}
     order = ["gemma-4-12b", "gemma-4-31b", "qwen3-14b", "qwen3-32b", "qwen3.5-9b", "qwen3.5-27b",
              "qwen3.6-27b", "gpt-oss-20b"]
     lines = []
@@ -72,8 +73,8 @@ def exp1_counts(status, repeat):
     return c
 
 
-def compliance_exp1_table():
-    r = load("exp1")
+def compliance_exp1_table(results):
+    r = load("exp1", results)
     models = [str(x) for x in r["subjects"]]
     conds = [str(x) for x in r["conditions"]]
     status, repeat = r["status"], r["repeat"]
@@ -104,8 +105,8 @@ def compliance_exp1_table():
     return "\n".join(lines)
 
 
-def compliance_exp4_table():
-    r = load("exp4")
+def compliance_exp4_table(results):
+    r = load("exp4", results)
     unit_model = r["unit_model"].astype(str)
     cond = r["unit_condition"].astype(str)
     closed, tokens = r["cot_closed"], r["cot_tokens"]       # [unit, objective, session, turn]
@@ -122,8 +123,8 @@ def compliance_exp4_table():
     return "\n".join(lines)
 
 
-def compliance_preflight_table():
-    recs = [json.loads(line) for line in open(REPO / "results" / "monitor_preflight.jsonl")]
+def compliance_preflight_table(results):
+    recs = [json.loads(line) for line in open(Path(results) / "monitor_preflight.jsonl")]
     # Only cases whose reply finished and was judged.
     recs = [r for r in recs if not r.get("error") and r.get("finish_reason") != "length"
             and r.get("complied") is not None]
@@ -140,11 +141,14 @@ def compliance_preflight_table():
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--results", default=str(RESULTS), help="directory of the results (default: results/)")
+    a = ap.parse_args()
     OUT.mkdir(exist_ok=True)
     for name, fn in [("monitors", monitors_table), ("compliance_exp1", compliance_exp1_table),
                      ("compliance_exp4", compliance_exp4_table),
                      ("compliance_preflight", compliance_preflight_table)]:
-        tex = fn()
+        tex = fn(a.results)
         (OUT / f"{name}.tex").write_text(tex + "\n")
         print(f"% {name}\n{tex}\n")
 

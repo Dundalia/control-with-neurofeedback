@@ -7,6 +7,7 @@
   figures/exp1_fit.pdf       appendix: observed vs predicted oriented control effect at turn 20
   figures/exp1_grid.pdf      appendix: every writer x subject pair, per block and family
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -20,7 +21,7 @@ from matplotlib.patches import Rectangle
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from neurofeedback.analysis import (BLOCKS, Exp1, additive_prediction, exp1_grid,  # noqa: E402
+from neurofeedback.analysis import (BLOCKS, RESULTS, Exp1, additive_prediction, exp1_grid,  # noqa: E402
                                     exp1_objective_difference_ci, exp1_self_bootstrap)
 from style import CMAP, GRID, SHORT, ZERO, apply_style, clean_axes, save  # noqa: E402
 
@@ -243,9 +244,12 @@ def grid_figure(e1):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--results", default=str(RESULTS), help="directory of exp1.npz (default: results/)")
+    a = ap.parse_args()
     apply_style()
     OUT.mkdir(exist_ok=True)
-    e1 = Exp1()
+    e1 = Exp1(a.results)
     fit_figure(e1)
     grid_figure(e1)
     results_figure(e1)
