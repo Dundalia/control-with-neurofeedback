@@ -7,9 +7,9 @@ from conftest import REPO
 from fakes import fake_backend
 from neurofeedback import prompts
 from neurofeedback.analysis import READOUT_ORDER
-from neurofeedback.experiments import fixed_sentence, monitor
+from neurofeedback.experiments import fixed_sentence, free_generation, monitor
 from neurofeedback.io import load_sentences, read_jsonl, write_jsonl
-from neurofeedback.models import EXP2_MODELS
+from neurofeedback.models import EXP1_MODELS, EXP2_MODELS
 from neurofeedback.monitors import load_monitor
 from neurofeedback.readouts import ReadoutSet
 
@@ -19,9 +19,44 @@ spec.loader.exec_module(collect)
 MODEL = "qwen3.5-9b"
 
 
-def backend():
-    rs = ReadoutSet(MODEL)
+def backend(model=MODEL):
+    rs = ReadoutSet(model)
     return fake_backend(num_layers=rs.num_layers, hidden=int(rs.readouts["probe_truth_d33"].mu.shape[0]))
+
+
+def same_format(out, name):
+    """The collector writes the keys and dtypes of the released results/<name>.npz (strings may
+    differ in width)."""
+    released = np.load(REPO / "results" / f"{name}.npz")
+    return set(out) == set(released.files) and all(
+        out[k].dtype == released[k].dtype or out[k].dtype.kind == released[k].dtype.kind == "U" for k in out)
+
+
+class FakeWriter:
+    async def write(self, conversation):
+        return " ".join(["word"] * 12), {"provider": "Fake", "completion_tokens": 12, "finish_reason": "stop"}
+
+    def describe(self):
+        return {"type": "fake"}
+
+
+def test_collect_exp1(tmp_path, monkeypatch):
+    subject, writer, rid = "qwen3.5-27b", "gemma-4-31b", "curvature_step3_d33"
+    monkeypatch.setattr(free_generation, "api_writer", lambda key, max_tokens: FakeWriter())
+    opening = [s["text"] for s in load_sentences(REPO / "data" / "exp1_opening_sentences.jsonl")]
+    free_generation.run_cell(subject=subject, readout_id=rid, objective="min", condition="disclosed",
+                             opening=opening, backend=backend(subject), readouts=ReadoutSet(subject, readout_ids=[rid]),
+                             out_root=tmp_path, cfg=free_generation.Exp1Config(horizon=4, n_sessions=2),
+                             writers=[subject, writer])
+    out = collect.collect_exp1(tmp_path, n_sessions=2, horizon=4)
+    assert same_format(out, "exp1")
+    for w in (subject, writer):
+        idx = (EXP1_MODELS.index(subject), EXP1_MODELS.index(w), READOUT_ORDER.index(rid), 1, 1)
+        for arm in ("real", "control"):
+            for r in free_generation.load_cell(tmp_path, subject, rid, "min", "disclosed", w, arm):
+                scores = [np.nan if t["score"] is None else t["score"] for t in r["turns"]]
+                assert np.allclose(out[arm][idx + (r["session"],)], scores, equal_nan=True)
+                assert out[f"status_{arm}"][idx + (r["session"],)].tolist() == [collect.turn_status(t) for t in r["turns"]]
 
 
 def test_collect_exp2(tmp_path):
@@ -37,6 +72,7 @@ def test_collect_exp2(tmp_path):
         r["scores"] = {rid: r["scores"].get(rid, r["scores"]["probe_truth_d33"]) for rid in READOUT_ORDER}
     write_jsonl(fixed_sentence.run_path(tmp_path, MODEL, "min", "hidden", 0), recs)
     out = collect.collect_exp2(tmp_path, n_sentences=2, horizon=3)
+    assert same_format(out, "exp2")
     si, ri = EXP2_MODELS.index(MODEL), READOUT_ORDER.index("step_change_d66")
     real = next(r for r in recs if r["arm"] == "real" and r["readout"] == "step_change_d66" and r["sentence"] == 1)
     assert np.allclose(out["real"][si, ri, 1, 0, 1], real["scores"]["step_change_d66"])
@@ -52,8 +88,10 @@ def test_collect_monitor(tmp_path):
     recs = monitor.run_fixed(be, mon, specs, horizon=2)
     write_jsonl(tmp_path / MODEL / "emotion.shard0.jsonl", recs)
     out = collect.collect_monitor(tmp_path, horizon=2, cot=False)
-    assert out["real_milli"].shape == (4, 2, 2) and out["control_milli"].shape == (4, 2, 3, 2)
+    assert same_format(out, "exp3")
+    assert out["real"].shape == (4, 2, 2) and out["control"].shape == (4, 2, 3, 2)
+    assert out["real"].dtype == out["control"].dtype == np.float32
     assert out["unit_condition"].tolist() == ["hidden", "disclosed", "hidden", "disclosed"]
     first = next(r for r in recs if r["sentence"] == sents[0]["id"] and r["template"] == "disclosed_min"
                  and r["arm"] == "real")
-    assert np.allclose(out["real_milli"][1, 1] / 1000, first["scores"])
+    assert np.allclose(out["real"][1, 1], first["scores"])

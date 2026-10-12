@@ -27,7 +27,7 @@ from neurofeedback.io import read_jsonl  # noqa: E402
 from neurofeedback.models import EXP1_MODELS, EXP2_MODELS  # noqa: E402
 from neurofeedback.monitors import CONCEPTS  # noqa: E402
 
-OBJECTIVES, CONDITIONS = ["max", "min"], ["hidden", "disclosed"]
+OBJECTIVES, CONDITIONS, ARMS = ["max", "min"], ["hidden", "disclosed"], ["real", "control"]
 MONITOR_ORDER = ["qwen3.5-9b", "qwen3.5-27b", "qwen3.6-27b", "qwen3-14b", "qwen3-32b", "gemma-4-12b",
                  "gemma-4-31b", "gpt-oss-20b"]
 VALID, SHORT, LONG, EMPTY, FAILED, UNDEFINED, MISSING = 0, 1, 2, 3, 4, 5, -1
@@ -44,34 +44,35 @@ def turn_status(t):
 
 
 def collect_exp1(root, n_sessions=20, horizon=20):
-    shape = (5, 5, len(READOUT_ORDER), 2, 2, 2, n_sessions, horizon)
-    scores = np.full(shape, np.nan, np.float32)
-    status = np.full(shape, MISSING, np.int8)
-    repeat = np.zeros(shape, np.int8)
+    shape = (5, 5, len(READOUT_ORDER), 2, 2, n_sessions, horizon)
+    scores = {a: np.full(shape, np.nan, np.float32) for a in ARMS}
+    status = {a: np.full(shape, MISSING, np.int8) for a in ARMS}
+    repeat = {a: np.zeros(shape, np.int8) for a in ARMS}
     missing = 0
     for si, S in enumerate(EXP1_MODELS):
         for ri, rid in enumerate(READOUT_ORDER):
             for oi, o in enumerate(OBJECTIVES):
                 for ci, c in enumerate(CONDITIONS):
                     for wi, W in enumerate(EXP1_MODELS):
-                        for ai, a in enumerate(("real", "control")):
+                        for a in ARMS:
                             recs = read_jsonl(arm_path(root, S, rid, o, c, W, a))
                             missing += int(not recs)
                             for r in recs:
-                                idx = (si, wi, ri, oi, ci, ai, r["session"])
+                                idx = (si, wi, ri, oi, ci, r["session"])
                                 prev = None
                                 for t, turn in enumerate(r["turns"][:horizon]):
-                                    scores[idx + (t,)] = np.nan if turn["score"] is None else turn["score"]
-                                    status[idx + (t,)] = st = turn_status(turn)
+                                    scores[a][idx + (t,)] = np.nan if turn["score"] is None else turn["score"]
+                                    status[a][idx + (t,)] = st = turn_status(turn)
                                     text = turn["text"].strip()
                                     if t > 0 and st == VALID:
-                                        repeat[idx + (t,)] = int(text == prev)
+                                        repeat[a][idx + (t,)] = int(text == prev)
                                     if t == 0 or st == VALID:
                                         prev = text
     print(f"[exp1] {missing} (writer, arm) files missing")
     return dict(subjects=np.array(EXP1_MODELS), writers=np.array(EXP1_MODELS), readouts=np.array(READOUT_ORDER),
-                objectives=np.array(OBJECTIVES), conditions=np.array(CONDITIONS), arms=np.array(["real", "control"]),
-                scores=scores, status=status, repeat=repeat)
+                objectives=np.array(OBJECTIVES), conditions=np.array(CONDITIONS),
+                real=scores["real"], control=scores["control"], status_real=status["real"],
+                status_control=status["control"], repeat_real=repeat["real"], repeat_control=repeat["control"])
 
 
 def collect_exp2(root, n_sentences=40, horizon=30):
@@ -102,8 +103,14 @@ def collect_exp2(root, n_sentences=40, horizon=30):
 
 
 def collect_monitor(root, horizon, cot, k_control=3):
+    """One unit per (model, monitor, sentence, condition): ``real[unit, objective, turn]`` and
+    ``control[unit, objective, stream, turn]``, and for Experiment 4 the same split of
+    ``cot_closed`` and ``cot_tokens``."""
+    fields = [("", "scores", np.float32)]
+    if cot:
+        fields += [("cot_closed_", "cot_closed", bool), ("cot_tokens_", "cot_tokens", np.int16)]
     um, umon, usent, ucond = [], [], [], []
-    real, control, closed, tokens = [], [], [], []
+    arrays = defaultdict(list)
     for m in MONITOR_ORDER:
         for mon in CONCEPTS:
             recs = [r for f in sorted((Path(root) / m).glob(f"{mon}.shard*.jsonl")) for r in read_jsonl(f)]
@@ -113,29 +120,17 @@ def collect_monitor(root, horizon, cot, k_control=3):
                 units[(r["sentence"], cond)][(obj, r["arm"], r["stream"])] = r
             for (sent, cond) in sorted(units, key=lambda k: (k[0], CONDITIONS.index(k[1]))):
                 cells = units[(sent, cond)]
-                R = np.zeros((2, horizon), np.int32)
-                C = np.zeros((2, k_control, horizon), np.int32)
-                CL = np.zeros((2, 1 + k_control, horizon), bool)
-                TK = np.zeros((2, 1 + k_control, horizon), np.int16)
-                for oi, o in enumerate(OBJECTIVES):
-                    sessions = [cells[(o, "real", 0)]] + [cells[(o, "control", k)] for k in range(k_control)]
-                    for k, s in enumerate(sessions):
-                        milli = np.round(np.array(s["scores"]) * 1000).astype(np.int32)
-                        if k == 0:
-                            R[oi] = milli
-                        else:
-                            C[oi, k - 1] = milli
-                        if cot:
-                            CL[oi, k], TK[oi, k] = s["cot_closed"], s["cot_tokens"]
+                for prefix, field, dtype in fields:
+                    arrays[prefix + "real"].append(np.array(
+                        [cells[(o, "real", 0)][field][:horizon] for o in OBJECTIVES], dtype))
+                    arrays[prefix + "control"].append(np.array(
+                        [[cells[(o, "control", k)][field][:horizon] for k in range(k_control)] for o in OBJECTIVES],
+                        dtype))
                 um.append(m), umon.append(mon), usent.append(sent), ucond.append(cond)
-                real.append(R), control.append(C), closed.append(CL), tokens.append(TK)
         print(f"[monitor] {m}: {sum(1 for x in um if x == m)} units")
-    out = dict(models=np.array(MONITOR_ORDER), monitors=np.array(CONCEPTS), unit_model=np.array(um),
-               unit_monitor=np.array(umon), unit_sentence=np.array(usent, np.int32), unit_condition=np.array(ucond),
-               real_milli=np.stack(real), control_milli=np.stack(control))
-    if cot:
-        out.update(cot_closed=np.stack(closed), cot_tokens=np.stack(tokens))
-    return out
+    return dict(models=np.array(MONITOR_ORDER), monitors=np.array(CONCEPTS), unit_model=np.array(um),
+                unit_monitor=np.array(umon), unit_sentence=np.array(usent, np.int32), unit_condition=np.array(ucond),
+                **{k: np.stack(v) for k, v in arrays.items()})
 
 
 def main():

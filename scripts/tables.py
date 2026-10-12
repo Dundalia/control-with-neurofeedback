@@ -77,15 +77,16 @@ def compliance_exp1_table(results):
     r = load("exp1", results)
     models = [str(x) for x in r["subjects"]]
     conds = [str(x) for x in r["conditions"]]
-    status, repeat = r["status"], r["repeat"]
     agg = {}
-    # one session per index: [subject, writer, readout, objective, condition, arm, session]
-    for idx in np.ndindex(status.shape[:-1]):
-        c = exp1_counts(status[idx], repeat[idx])
-        w, cond, arm = models[idx[1]], conds[idx[4]], ("real", "control")[idx[5]]
-        for k in [(w, "all", "all"), (w, arm, "all"), (w, "all", cond),
-                  ("all", "all", "all"), ("all", arm, "all"), ("all", "all", cond)]:
-            agg.setdefault(k, Counter()).update(c)
+    # one session per index: [subject, writer, readout, objective, condition, session]
+    for arm in ("real", "control"):
+        status, repeat = r[f"status_{arm}"], r[f"repeat_{arm}"]
+        for idx in np.ndindex(status.shape[:-1]):
+            c = exp1_counts(status[idx], repeat[idx])
+            w, cond = models[idx[1]], conds[idx[4]]
+            for k in [(w, "all", "all"), (w, arm, "all"), (w, "all", cond),
+                      ("all", "all", "all"), ("all", arm, "all"), ("all", "all", cond)]:
+                agg.setdefault(k, Counter()).update(c)
 
     def valid(c):
         return 100 * c["valid"] / c["turns"]
@@ -109,7 +110,9 @@ def compliance_exp4_table(results):
     r = load("exp4", results)
     unit_model = r["unit_model"].astype(str)
     cond = r["unit_condition"].astype(str)
-    closed, tokens = r["cot_closed"], r["cot_tokens"]       # [unit, objective, session, turn]
+    # [unit, objective, session, turn], the real session first
+    closed = np.concatenate([r["cot_closed_real"][:, :, None], r["cot_closed_control"]], axis=2)
+    tokens = np.concatenate([r["cot_tokens_real"][:, :, None], r["cot_tokens_control"]], axis=2)
     order = ["qwen3.5-9b", "qwen3.5-27b", "qwen3.6-27b", "qwen3-14b", "qwen3-32b", "gemma-4-12b",
              "gemma-4-31b", "gpt-oss-20b"]
     lines = []

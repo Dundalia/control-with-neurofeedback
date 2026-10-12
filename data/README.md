@@ -24,7 +24,7 @@ The sentences in this directory are taken from the datasets below and keep the l
 | `concept_probe_sentences.json`, morality | ETHICS | MIT |
 | `concept_probe_sentences.json`, truthfulness | Azaria & Mitchell true/false statements | none stated |
 | `monitor_sentences/*/truth.jsonl` | FEVER | CC BY-SA 3.0 |
-| `monitor_sentences/*/deception.jsonl` | AI-Liar (Pacchiardi et al.) and the Apollo Research roleplaying dialogues | BSD-3-Clause (AI-Liar); none stated (roleplaying) |
+| `monitor_sentences/*/deception.jsonl` | AI-Liar (Pacchiardi et al.) and the Apollo Research roleplaying dialogues | BSD-3-Clause (AI-Liar), none stated (roleplaying) |
 | `monitor_sentences/*/sentiment.jsonl` | Rotten Tomatoes (Pang & Lee) | none stated |
 | `monitor_sentences/*/emotion.jsonl` | GoEmotions | Apache 2.0 |
 | `monitor_sentences/*/morality.jsonl` | Moral Stories | MIT |

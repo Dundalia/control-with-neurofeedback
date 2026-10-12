@@ -2,12 +2,15 @@
 
 They read the processed results in ``results/`` (``scripts/collect_results.py``):
 
-* ``exp1.npz``: scores[subject, writer, readout, objective, condition, arm, session, turn]
+* ``exp1.npz``: real and control[subject, writer, readout, objective, condition, session, turn]
   (NaN where the turn has no readout), plus the compliance status of every turn;
 * ``exp2.npz``: real and control[subject, readout, objective, condition, sentence, turn], the
   control being the mean over the control sessions of the sentence;
-* ``exp3.npz``/``exp4.npz``: one *unit* per (model, monitor, sentence, condition), with the
-  real session and the 3 control sessions of each objective, in milli-points.
+* ``exp3.npz``/``exp4.npz``: one *unit* per (model, monitor, sentence, condition), with
+  real[unit, objective, turn] and control[unit, objective, stream, turn] for its 3 control
+  sessions.
+
+All scores are in points.
 
 Readouts and units are stored in the order the bootstraps resample them, so the figures
 reproduce the paper's intervals exactly.
@@ -74,9 +77,7 @@ class Exp1:
         self.readouts = [str(x) for x in r["readouts"]]
         objectives = [str(x) for x in r["objectives"]]
         conditions = [str(x) for x in r["conditions"]]
-        self.status, self.repeat = r["status"], r["repeat"]
-        real = ffill(r["scores"][..., 0, :, :])
-        ctrl = ffill(r["scores"][..., 1, :, :])
+        real, ctrl = ffill(r["real"]), ffill(r["control"])
         self.E = {}
         for si, S in enumerate(self.models):
             for oi, o in enumerate(objectives):
@@ -311,8 +312,8 @@ class MonitorResults:
         self.unit_model = r["unit_model"].astype(str)
         self.unit_monitor = r["unit_monitor"].astype(str)
         self.unit_condition = r["unit_condition"].astype(str)
-        self.real = r["real_milli"] / 1000.0         # [unit, objective (max, min), turn]
-        self.control = r["control_milli"] / 1000.0   # [unit, objective, stream, turn]
+        self.real = r["real"].astype(np.float64)        # [unit, objective (max, min), turn]
+        self.control = r["control"].astype(np.float64)  # [unit, objective, stream, turn]
         self.horizon = self.real.shape[-1]
 
     def units(self, model, monitor=None, condition=None):
