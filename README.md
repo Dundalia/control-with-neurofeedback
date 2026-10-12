@@ -15,11 +15,11 @@ In an in-context neurofeedback session, a *subject* model $S$ is asked to maximi
 
 ## Contents
 
-- `neurofeedback/`: the library (models, vLLM backend, readouts, monitors, session loops, analysis)
-- `scripts/`: running the experiments, collecting the results, figures and tables (`scripts/build/` rebuilds the readouts, the monitors and the sentence sets)
-- `data/`: sentence sets and datasets (see `data/README.md`)
-- `artifacts/`: the readouts and monitors of each model
-- `results/`: the processed results of the paper's runs
+- [`neurofeedback/`](neurofeedback): the library (models, vLLM backend, readouts, monitors, session loops, analysis)
+- [`scripts/`](scripts): running the experiments, collecting the results, figures and tables ([`scripts/build/`](scripts/build) rebuilds the readouts, the monitors and the sentence sets)
+- [`data/`](data): sentence sets and datasets (see [`data/README.md`](data/README.md))
+- [`artifacts/`](artifacts): the readouts and monitors of each model
+- [`results/`](results): the processed results of the paper's runs
 
 ## Install
 
@@ -39,7 +39,7 @@ bash vendor/apply_vllm_lens_patch.sh
 ```
 
 > [!NOTE]
-> The patch lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects. Without the patch, [vllm-lens](https://github.com/UKGovernmentBEIS/vllm-lens) ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
+> The [patch](vendor/vllm_lens_span_prefix.patch) lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects. Without the patch, [vllm-lens](https://github.com/UKGovernmentBEIS/vllm-lens) ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
 
 Experiment 1 calls [OpenRouter](https://openrouter.ai): put `OPENROUTER_API_KEY` in the environment or in a `.env` file at the root of the repository.
 
@@ -93,7 +93,7 @@ python scripts/collect_results.py --exp 2 --outputs outputs/exp2 --results outpu
 python scripts/figures/exp2.py --results outputs/results
 ```
 
-`collect_results.py` writes to `outputs/results/` by default, so the released `results/` are never overwritten. The figure and table scripts read `results/` unless given `--results`, and expect there everything they read: the results of every model of the experiment, both `exp3.npz` and `exp4.npz` for `exp3_exp4.py`, and also `monitor_auroc.csv` and `monitor_preflight.jsonl` for `tables.py`.
+[`collect_results.py`](scripts/collect_results.py) writes to `outputs/results/` by default, so the released `results/` are never overwritten. The figure and table scripts read `results/` unless given `--results`, and expect there everything they read: the results of every model of the experiment, both `exp3.npz` and `exp4.npz` for `exp3_exp4.py`, and also `monitor_auroc.csv` and `monitor_preflight.jsonl` for `tables.py`.
 
 Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `olmo-3.1-32b` (Experiments 1 and 2), `qwen3-32b`, `qwen3-14b`, `gemma-4-12b`, `qwen3.5-9b`, `qwen3.6-27b` (Experiment 2), and the 8 models with a native chain of thought for Experiments 3 and 4 (all but Mistral and OLMo).
 
@@ -101,19 +101,19 @@ Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `o
 
 The released `artifacts/` and `data/` are what the runs used. The scripts in `scripts/build/` document how they were made and rebuild them in place:
 
-- `build_corpora.py`, `concept_probes.py --prepare` and `select_sentences.py` overwrite the sentence sets in `data/`.
-- `readouts.py --stage finalize`, `calibrate_exp2.py` and `train_monitors.py` overwrite the readouts and monitors in `artifacts/`.
-- `evaluate_monitors.py` overwrites `results/monitor_auroc.csv`.
+- [`build_corpora.py`](scripts/build/build_corpora.py), [`concept_probes.py --prepare`](scripts/build/concept_probes.py) and [`select_sentences.py`](scripts/build/select_sentences.py) overwrite the sentence sets in `data/`.
+- [`readouts.py --stage finalize`](scripts/build/readouts.py), [`calibrate_exp2.py`](scripts/build/calibrate_exp2.py) and [`train_monitors.py`](scripts/build/train_monitors.py) overwrite the readouts and monitors in `artifacts/`.
+- [`evaluate_monitors.py`](scripts/build/evaluate_monitors.py) overwrites `results/monitor_auroc.csv`.
 - `build_corpora.py`, `readouts.py` and `evaluate_monitors.py` write elsewhere with `--out`.
-- Everything else, including the monitor sentences selected by `select_monitor_sentences.py`, goes to `build/` (several GB per model), or to `$BUILD_DIR` if it is set.
+- Everything else, including the monitor sentences selected by [`select_monitor_sentences.py`](scripts/build/select_monitor_sentences.py), goes to `build/` (several GB per model), or to `$BUILD_DIR` if it is set.
 
 ## Data
 
-See `data/README.md` for the sources of the sentence sets and datasets.
+See [`data/README.md`](data/README.md) for the sources of the sentence sets and datasets.
 
 ## License
 
-The code is released under the MIT license (`LICENSE`). The results (`results/`) and the readouts and monitors (`artifacts/`) are released under CC BY 4.0. The sentences in `data/` keep the licenses of their sources (see `data/README.md`).
+The code is released under the MIT license ([`LICENSE`](LICENSE)). The results (`results/`) and the readouts and monitors (`artifacts/`) are released under CC BY 4.0. The sentences in `data/` keep the licenses of their sources (see [`data/README.md`](data/README.md)).
 
 ## Citation
 
