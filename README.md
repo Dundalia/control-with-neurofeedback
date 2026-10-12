@@ -39,9 +39,9 @@ bash vendor/apply_vllm_lens_patch.sh
 ```
 
 > [!NOTE]
-> The patch lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects. Without the patch, vllm-lens ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
+> The patch lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects. Without the patch, [vllm-lens](https://github.com/UKGovernmentBEIS/vllm-lens) ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
 
-Experiment 1 calls OpenRouter: put `OPENROUTER_API_KEY` in the environment or in a `.env` file at the root of the repository.
+Experiment 1 calls [OpenRouter](https://openrouter.ai): put `OPENROUTER_API_KEY` in the environment or in a `.env` file at the root of the repository.
 
 ## Reproducing the figures and tables
 
