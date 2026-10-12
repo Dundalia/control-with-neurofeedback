@@ -55,10 +55,10 @@ pytest
 
 | Script | Output |
 |---|---|
-| [`scripts/figures/exp1.py`](https://github.com/Dundalia/control-with-neurofeedback/blob/main/scripts/figures/exp1.py) | The figure of Experiment 1 in the main text, and its two appendix figures (additive fit, every writer and subject pair), in `figures/` |
-| [`scripts/figures/exp2.py`](https://github.com/Dundalia/control-with-neurofeedback/blob/main/scripts/figures/exp2.py) | The figure of Experiment 2 in the main text, and its two appendix figures (per model and objective, per readout), in `figures/` |
-| [`scripts/figures/exp3_exp4.py`](https://github.com/Dundalia/control-with-neurofeedback/blob/main/scripts/figures/exp3_exp4.py) | The figure of Experiments 3 and 4 in the main text, and their appendix figures (per model and objective, per monitor), in `figures/` |
-| [`scripts/tables.py`](https://github.com/Dundalia/control-with-neurofeedback/blob/main/scripts/tables.py) | The tables of the appendix (AUROC of the monitors, compliance in Experiment 1, chain of thought in Experiment 4, compliance test), in `tables/` |
+| [`scripts/figures/exp1.py`](scripts/figures/exp1.py) | The figure of Experiment 1 in the main text, and its two appendix figures (additive fit, every writer and subject pair), in `figures/` |
+| [`scripts/figures/exp2.py`](scripts/figures/exp2.py) | The figure of Experiment 2 in the main text, and its two appendix figures (per model and objective, per readout), in `figures/` |
+| [`scripts/figures/exp3_exp4.py`](scripts/figures/exp3_exp4.py) | The figure of Experiments 3 and 4 in the main text, and their appendix figures (per model and objective, per monitor), in `figures/` |
+| [`scripts/tables.py`](scripts/tables.py) | The tables of the appendix (AUROC of the monitors, compliance in Experiment 1, chain of thought in Experiment 4, compliance test), in `tables/` |
 
 ### The released results
 
