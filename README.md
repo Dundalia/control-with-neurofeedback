@@ -1,6 +1,6 @@
 # Cross-Model In-Context Neurofeedback Reveals (Limited) Activation Control in LLMs
 
-This repo contains the code and data to run the four experiments of the paper (Davide Baldelli, Damiano Fornasiere, Mirko Bronzi) and to reproduce its figures and tables from the released results.
+This repo contains the code and data to run the four experiments of the paper (Davide Baldelli, Robyn Kozierok, Mirko Bronzi, Damiano Fornasiere) and to reproduce its figures and tables from the released results.
 
 Probes on activation vectors are widely used to detect misbehavior in language models, but their success relies on the assumption that models cannot control what their activations encode. Humans can learn, through neurofeedback, to control the firing of even single neurons, and [two](https://arxiv.org/abs/2505.13763) [papers](https://arxiv.org/abs/2609.00904) investigated whether this ability extends to language models, reaching conflicting conclusions.
 
