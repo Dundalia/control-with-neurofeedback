@@ -1,4 +1,4 @@
-# Cross-Model In-Context Neurofeedback Reveals (Limited) Activation Control in LLMs
+# [Cross-Model In-Context Neurofeedback Reveals (Limited) Activation Control in LLMs](https://arxiv.org/abs/2610.20179)
 
 This repo contains the code and data to run the four experiments of the paper (Davide Baldelli, Robyn Kozierok, Mirko Bronzi, Damiano Fornasiere) and to reproduce its figures and tables from the released results.
 
@@ -117,4 +117,14 @@ The code is released under the MIT license ([`LICENSE`](LICENSE)). The results (
 
 ## Citation
 
-The citation will be added upon publication.
+```bibtex
+@misc{baldelli2026crossmodelincontextneurofeedbackreveals,
+      title={Cross-Model In-Context Neurofeedback Reveals (Limited) Activation Control in LLMs}, 
+      author={Davide Baldelli and Robyn Kozierok and Mirko Bronzi and Damiano Fornasiere},
+      year={2026},
+      eprint={2610.20179},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2610.20179}, 
+}
+```
