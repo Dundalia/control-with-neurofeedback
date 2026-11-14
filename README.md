@@ -9,7 +9,7 @@ In an in-context neurofeedback session, a *subject* model $S$ is asked to maximi
 ![In-context neurofeedback](assets/protocol.png)
 
 - **Experiment 1 (free generation).** A writer generates the sentences and a subject's activations are scored, for 5 writers x 5 subjects (each model also writing for itself), 42 readouts, 20 turns.
-- **Experiment 2 (fixed sentence).** The subject's reply is a fixed sentence, teacher-forced at every turn, for 10 models, 42 readouts, 30 turns.
+- **Experiment 2 (fixed sentence).** The subject's reply is a fixed sentence, teacher-forced at every turn, for 11 models, 42 readouts, 30 turns. The appendix adds, on Qwen3.5-27B, Qwen3.6-27B, Gemma-4-31B and Mistral-Small-3.2-24B, a *shuffled control* (control sessions shown the real scores in a random order), a test of *targeted or broad modulation* (all 42 readouts recorded in every real session), and a *depth ablation* (the score read at 45, 55, 75, 85 and 95% of the depth).
 - **Experiment 3 (monitors).** As Experiment 2, but the score is an activation monitor (truthfulness, deception, sentiment, emotion, morality, formality) on sentences it flags, for 8 models, 20 turns.
 - **Experiment 4 (monitors, chain of thought).** As Experiment 3, but the model reasons before the fixed sentence, for 10 turns.
 
@@ -18,7 +18,7 @@ In an in-context neurofeedback session, a *subject* model $S$ is asked to maximi
 - [`neurofeedback/`](neurofeedback): the library (models, vLLM backend, readouts, monitors, session loops, analysis)
 - [`scripts/`](scripts): running the experiments, collecting the results, figures and tables ([`scripts/build/`](scripts/build) rebuilds the readouts, the monitors and the sentence sets)
 - [`data/`](data): sentence sets and datasets (see [`data/README.md`](data/README.md))
-- [`artifacts/`](artifacts): the readouts and monitors of each model
+- [`artifacts/`](artifacts): the readouts and monitors of each model, and the readouts of the depth ablation in [`artifacts/readouts/depths/`](artifacts/readouts/depths)
 - [`results/`](results): the processed results of the paper's runs
 
 ## Install
@@ -31,7 +31,7 @@ pip install -e ".[dev]"
 
 The install must be editable (`-e`): the code reads `prompts/`, `artifacts/` and `results/` from the repository.
 
-To run the experiments and the build (Python 3.12, NVIDIA GPUs, we used one A100 80GB per model):
+To run the experiments and the build (Python 3.12, NVIDIA GPUs, we used one A100 80GB per model, and two H200 for Qwen3.5-122B-A10B):
 
 ```bash
 pip install -r requirements.txt
@@ -39,7 +39,10 @@ bash vendor/apply_vllm_lens_patch.sh
 ```
 
 > [!NOTE]
-> The [patch](vendor/vllm_lens_span_prefix.patch) lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its ten subjects. Without the patch, [vllm-lens](https://github.com/UKGovernmentBEIS/vllm-lens) ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
+> The [patch](vendor/vllm_lens_span_prefix.patch) lets a read reuse the cached context and recompute only the sentence. Experiment 2 reads this way by default for six of its eleven subjects. Without the patch, [vllm-lens](https://github.com/UKGovernmentBEIS/vllm-lens) ignores the request and every read silently recomputes the whole conversation: the scores are the same up to vLLM's numerical noise, but it can be slower and is not the read mode the paper used for those subjects.
+
+> [!NOTE]
+> vLLM 0.23 ignores the `VLLM_ATTENTION_BACKEND` environment variable, and on H100, H200 and B200 GPUs it can default to FlashInfer, under which vllm-lens captures no activations. The backend therefore pins FlashAttention with the engine argument `attention_backend="FLASH_ATTN"` for the Qwen and Mistral models ([`neurofeedback/backend.py`](neurofeedback/backend.py)). On the A100s of the paper's runs vLLM selected FlashAttention for these models anyway, so the pin does not change them; Qwen3.5-122B-A10B, which ran on two H200s, needed it. Gemma 4 (for which vLLM forces its Triton backend) and GPT-OSS are left to vLLM's choice, as in the paper's runs.
 
 Experiment 1 calls [OpenRouter](https://openrouter.ai): put `OPENROUTER_API_KEY` in the environment or in a `.env` file at the root of the repository.
 
@@ -48,6 +51,7 @@ Experiment 1 calls [OpenRouter](https://openrouter.ai): put `OPENROUTER_API_KEY`
 ```bash
 python scripts/figures/exp1.py
 python scripts/figures/exp2.py
+python scripts/figures/exp2_analyses.py
 python scripts/figures/exp3_exp4.py
 python scripts/tables.py
 pytest
@@ -56,9 +60,10 @@ pytest
 | Script | Output |
 |---|---|
 | [`scripts/figures/exp1.py`](scripts/figures/exp1.py) | The figure of Experiment 1 in the main text, and its two appendix figures (additive fit, every writer and subject pair), in `figures/` |
-| [`scripts/figures/exp2.py`](scripts/figures/exp2.py) | The figure of Experiment 2 in the main text, and its two appendix figures (per model and objective, per readout), in `figures/` |
+| [`scripts/figures/exp2.py`](scripts/figures/exp2.py) | The figure of Experiment 2 in the main text (objective difference of the direction readouts at 33% and 66% depth, and against the turn), its two appendix figures (per model and objective, per readout), in `figures/`, and the bounds on the effect of the models without one |
+| [`scripts/figures/exp2_analyses.py`](scripts/figures/exp2_analyses.py) | The three figures of the additional analyses of Experiment 2 in the appendix (shuffled control, targeted or broad modulation, read depths), in `figures/`, and the numbers quoted in their text |
 | [`scripts/figures/exp3_exp4.py`](scripts/figures/exp3_exp4.py) | The figure of Experiments 3 and 4 in the main text, and their appendix figures (per model and objective, per monitor), in `figures/` |
-| [`scripts/tables.py`](scripts/tables.py) | The tables of the appendix (AUROC of the monitors, compliance in Experiment 1, chain of thought in Experiment 4, compliance test), in `tables/` |
+| [`scripts/tables.py`](scripts/tables.py) | The tables of the appendix (AUROC of the monitors, compliance in Experiment 1, chain of thought in Experiment 4, compliance test, diagonal excess with and without the additive fit) in `tables/`, and the numbers of the additivity test of Experiment 1 |
 
 ### The released results
 
@@ -66,10 +71,13 @@ pytest
 
 - `exp1.npz`: `real` and `control[subject, writer, readout, objective, condition, session, turn]` (NaN where the reply had no readout), with the compliance status of every turn in `status_real` and `status_control` (0 valid, 1 too short, 2 too long, 3 empty, 4 failed API call, 5 readout undefined), and whether a valid reply repeated the previous one in `repeat_real` and `repeat_control`.
 - `exp2.npz`: `real` and `control[subject, readout, objective, condition, sentence, turn]`, the control being the mean of the control sessions of the sentence.
+- `exp2_shuffled.npz`: the shuffled control of the four models of the additional analyses, `shuffled` and `crossed[subject, readout, objective, condition, sentence, stream]`: for every real session of `exp2.npz`, the score at turn 30 of its 3 sessions shown its own scores in a random order, and of its 3 sessions shown, in the same orders, the scores of the real session with the opposite objective. Only turn 30 is stored, the only turn at which a real session and its shuffled sessions have shown the same scores.
+- `exp2_targeted.npz`: under the hidden criterion, `real[subject, target, readout, objective, sentence]`, every readout at turn 30 of the session whose score is `target` (the paper's real sessions, replayed and read with all 42 readouts), `control[subject, readout, objective, sentence]`, the mean of the 8 control sessions at turn 30, and `level[subject, readout]`, the mean score of a readout over turns 1 to 29 of its own sessions.
+- `exp2_depths.npz`: the depth ablation, under the hidden criterion, with the 15 direction readouts at 45, 55, 75, 85 and 95% depth as the score: `real[subject, readout, objective, condition, sentence, turn]` as in `exp2.npz`, and at turn 30 `control[..., sentence]` (the mean of the 8 control sessions) and `shuffled` and `crossed[..., sentence, stream]` (the shuffled control).
 - `exp3.npz`, `exp4.npz`: one unit per (model, monitor, sentence, condition), with `real[unit, objective, turn]` and `control[unit, objective, stream, turn]` for its 3 control sessions. For Experiment 4, also whether each chain of thought finished within the budget (`cot_closed_real`, `cot_closed_control`) and its length in tokens (`cot_tokens_real`, `cot_tokens_control`).
 - `monitor_auroc.csv`, `monitor_preflight.jsonl`: the monitor evaluation and the compliance test.
 
-Readouts and units are stored in the order in which the bootstraps of the paper resample them, so that the figures reproduce the paper's intervals exactly.
+Readouts and units are stored in the order in which the bootstraps of the paper resample them, so that the figures reproduce the paper's intervals exactly. The new files store the scores in float64, as the analyses of the appendix read them from the session records.
 
 ## Running the experiments
 
@@ -83,19 +91,30 @@ until curl -s $OLMO_URL/models > /dev/null     # wait for the server: failed cal
 do sleep 10
 done
 python scripts/run_exp1.py --subject qwen3.5-27b --out outputs/exp1
-# Experiment 2
+# Experiment 2 (Qwen3.5-122B-A10B runs on two GPUs: CUDA_VISIBLE_DEVICES=0,1)
 python scripts/run_exp2.py --subject qwen3.5-27b --out outputs/exp2
+# Experiment 2, additional analyses (see the docstring of scripts/run_exp2.py)
+python scripts/run_exp2.py --subject qwen3.5-27b --arms shuffled crossed --gate-turns 8 --out outputs/exp2_shuffled
+python scripts/run_exp2.py --subject qwen3.5-27b --conditions hidden --arms control replay --out outputs/exp2_replay
+python scripts/run_exp2.py --subject qwen3.5-27b --depths 45 55 75 85 95 --conditions hidden --out outputs/exp2_depths
+python scripts/run_exp2.py --subject qwen3.5-27b --depths 45 55 75 85 95 --conditions hidden --arms shuffled crossed \
+    --source results/exp2_depths.npz --gate-turns 8 --out outputs/exp2_depths_shuffled
 # Experiments 3 and 4
 python scripts/run_exp3.py --subject qwen3.5-27b --out outputs/exp3
 python scripts/run_exp4.py --subject qwen3.5-27b --out outputs/exp4
 # then, for each experiment: collect the session records and make the figures from them
 python scripts/collect_results.py --exp 2 --outputs outputs/exp2 --results outputs/results
 python scripts/figures/exp2.py --results outputs/results
+python scripts/collect_results.py --exp 2-shuffled --outputs outputs/exp2_shuffled
+python scripts/collect_results.py --exp 2-targeted --outputs outputs/exp2_replay
+python scripts/collect_results.py --exp 2-depths --outputs outputs/exp2_depths outputs/exp2_depths_shuffled
 ```
 
-[`collect_results.py`](scripts/collect_results.py) writes to `outputs/results/` by default, so the released `results/` are never overwritten. The figure and table scripts read `results/` unless given `--results`, and expect there everything they read: the results of every model of the experiment, both `exp3.npz` and `exp4.npz` for `exp3_exp4.py`, and also `monitor_auroc.csv` and `monitor_preflight.jsonl` for `tables.py`.
+The shuffled and crossed sessions show the numbers displayed by the real sessions of `--source`: by default the paper's (`results/exp2.npz`, rounded), so that the control is paired with the released real sessions; the depth ablation's shuffled control takes them from `results/exp2_depths.npz`. With `--gate-turns 8`, each shard first replays these numbers in their original order and stops if the scores differ from the source's by more than 2 points (median). The replay arm shows every real session its own numbers in their original order; with the sentence fixed this reproduces the real session up to vLLM's numerical noise, and it is how the paper's real sessions were read again with all 42 readouts for the analysis of targeted or broad modulation.
 
-Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `olmo-3.1-32b` (Experiments 1 and 2), `qwen3-32b`, `qwen3-14b`, `gemma-4-12b`, `qwen3.5-9b`, `qwen3.6-27b` (Experiment 2), and the 8 models with a native chain of thought for Experiments 3 and 4 (all but Mistral and OLMo).
+[`collect_results.py`](scripts/collect_results.py) writes to `outputs/results/` by default, so the released `results/` are never overwritten. The figure and table scripts read `results/` unless given `--results`, and expect there everything they read: the results of every model of the experiment, both `exp3.npz` and `exp4.npz` for `exp3_exp4.py`, `exp2.npz` and the three files of the additional analyses for `exp2_analyses.py`, and also `monitor_auroc.csv` and `monitor_preflight.jsonl` for `tables.py`.
+
+Models: `qwen3.5-27b`, `gemma-4-31b`, `gpt-oss-20b`, `mistral-small-3.2-24b`, `olmo-3.1-32b` (Experiments 1 and 2), `qwen3-32b`, `qwen3-14b`, `gemma-4-12b`, `qwen3.5-9b`, `qwen3.6-27b`, `qwen3.5-122b-a10b` (Experiment 2), `qwen3.5-27b`, `qwen3.6-27b`, `gemma-4-31b`, `mistral-small-3.2-24b` (the additional analyses of Experiment 2), and the 8 models with a native chain of thought for Experiments 3 and 4 (all but Mistral, OLMo and Qwen3.5-122B-A10B). Qwen3.5-122B-A10B ran in BF16 on two H200 GPUs with tensor parallelism (`tensor_parallel_size` in [`neurofeedback/models.py`](neurofeedback/models.py)), the other models on one A100 80GB each.
 
 ## Rebuilding the readouts, the monitors and the sentence sets
 
@@ -103,6 +122,7 @@ The released `artifacts/` and `data/` are what the runs used. The scripts in `sc
 
 - [`build_corpora.py`](scripts/build/build_corpora.py), [`concept_probes.py --prepare`](scripts/build/concept_probes.py) and [`select_sentences.py`](scripts/build/select_sentences.py) overwrite the sentence sets in `data/`.
 - [`readouts.py --stage finalize`](scripts/build/readouts.py), [`calibrate_exp2.py`](scripts/build/calibrate_exp2.py) and [`train_monitors.py`](scripts/build/train_monitors.py) overwrite the readouts and monitors in `artifacts/`.
+- [`readouts_depths.py`](scripts/build/readouts_depths.py) builds the readouts of the depth ablation with the same recipe and overwrites `artifacts/readouts/depths/`.
 - [`evaluate_monitors.py`](scripts/build/evaluate_monitors.py) overwrites `results/monitor_auroc.csv`.
 - `build_corpora.py`, `readouts.py` and `evaluate_monitors.py` write elsewhere with `--out`.
 - Everything else, including the monitor sentences selected by [`select_monitor_sentences.py`](scripts/build/select_monitor_sentences.py), goes to `build/` (several GB per model), or to `$BUILD_DIR` if it is set.

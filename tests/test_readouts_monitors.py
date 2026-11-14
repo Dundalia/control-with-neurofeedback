@@ -3,9 +3,10 @@ import numpy as np
 import pytest
 
 from neurofeedback.analysis import READOUT_ORDER, family_of
-from neurofeedback.models import EXP2_MODELS, MONITOR_MODELS
+from neurofeedback.models import EXP2_ANALYSIS_MODELS, EXP2_MODELS, MONITOR_MODELS
 from neurofeedback.monitors import CONCEPTS, load_monitor
-from neurofeedback.readouts import ReadoutSet, centered_cosine, curvature, step_change
+from neurofeedback.readouts import (DEPTH_READOUTS_DIR, EXTRA_DEPTHS, ReadoutSet, centered_cosine, curvature,
+                                   depth_readout_ids, step_change)
 
 
 def test_curvature_of_a_line_is_zero_and_of_a_zigzag_is_pi():
@@ -45,3 +46,24 @@ def test_monitor_artifacts(model):
         m = load_monitor(model, concept)
         span = np.random.default_rng(0).standard_normal((1, 12, m.mu.shape[0])) * m.sd + m.mu
         assert 0.0 <= m.score(span) <= 100.0
+
+
+@pytest.mark.parametrize("model", EXP2_ANALYSIS_MODELS)
+def test_depth_readout_artifacts(model):
+    """The readouts of the depth ablation: the paper's 42 unchanged, plus 15 direction readouts per
+    extra depth, each read at its own anchor."""
+    deep = ReadoutSet(model, "exp2", readouts_dir=DEPTH_READOUTS_DIR)
+    paper = ReadoutSet(model, "exp2")
+    assert deep.ids == paper.ids + depth_readout_ids()
+    for rid in paper.ids:
+        a, b = deep.readouts[rid], paper.readouts[rid]
+        assert (a.lo, a.hi, a.median, a.anchors) == (b.lo, b.hi, b.median, b.anchors)
+        if a.vector is not None:
+            assert np.array_equal(a.vector, b.vector) and np.array_equal(a.mu, b.mu)
+    for d, frac in EXTRA_DEPTHS.items():
+        assert deep.layers[d] == max(0, min(deep.num_layers - 1, round(frac * (deep.num_layers - 1))))
+    for rid in depth_readout_ids():
+        r = deep.readouts[rid]
+        assert r.anchors == (rid.rsplit("_", 1)[1],) and r.family == family_of(rid)
+        assert np.linalg.norm(r.vector) == pytest.approx(1.0, abs=1e-4)
+        assert r.score(r.hi) - r.score(r.lo) == pytest.approx(100.0)

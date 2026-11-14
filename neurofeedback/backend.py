@@ -14,9 +14,15 @@ the content tokens of the reply, never the template wrapper or a reasoning block
   so that the model replies directly in the final channel.
 * Mistral-Small-3.x and OLMo 3.x: the reply follows the generation prompt.
 
-vLLM is run with the prebuilt FlashAttention backend and ``enforce_eager`` (FlashInfer
-JIT-compiles at start-up and needs nvcc), and with vLLM's V1 model runner, because the V2
-runner lacks the ``input_batch`` attribute that the vllm-lens hook reads.
+vLLM is run with ``enforce_eager`` and with vLLM's V1 model runner, because the V2 runner
+lacks the ``input_batch`` attribute that the vllm-lens hook reads. The attention backend is
+pinned to FlashAttention with the engine argument ``attention_backend`` for the Qwen and
+Mistral families (``FamilyConfig.attention_backend``): vLLM 0.23 ignores the
+``VLLM_ATTENTION_BACKEND`` environment variable, and on newer GPUs (H200, B200) it defaults to
+FlashInfer, under which vllm-lens captures nothing. On the A100s of the paper's runs vLLM
+selected FlashAttention for these families anyway, so the pin changes nothing there. Gemma 4
+and GPT-OSS are left to vLLM's choice, as in the paper's runs (vLLM forces the Triton backend
+for Gemma 4, whose layers have two head dimensions).
 """
 from __future__ import annotations
 
@@ -33,17 +39,20 @@ class FamilyConfig:
     assistant_prefix: str = ""
     # Turn delimiters to stop generation on, besides the default EOS.
     stop_tokens: list = field(default_factory=list)
+    # vLLM attention backend (engine argument); None: vLLM's choice.
+    attention_backend: str | None = None
 
 
 FAMILY_CONFIGS = {
-    "qwen": FamilyConfig("qwen", {"enable_thinking": False}, {"enable_thinking": True}),
+    "qwen": FamilyConfig("qwen", {"enable_thinking": False}, {"enable_thinking": True},
+                         attention_backend="FLASH_ATTN"),
     "gemma": FamilyConfig("gemma", {}, {"enable_thinking": True}),
     "gpt_oss": FamilyConfig(
         "gpt_oss", {"reasoning_effort": "low"}, {"reasoning_effort": "medium"},
         assistant_prefix="<|channel|>analysis<|message|><|end|><|start|>assistant<|channel|>final<|message|>",
         # Without these stops the model runs past its answer into a new reasoning turn.
         stop_tokens=["<|return|>", "<|end|>", "<|call|>"]),
-    "mistral": FamilyConfig("mistral"),
+    "mistral": FamilyConfig("mistral", attention_backend="FLASH_ATTN"),
     # In multi-turn conversations OLMo emits <|im_end|> but not its EOS <|endoftext|>.
     "olmo": FamilyConfig("olmo", stop_tokens=["<|im_end|>"]),
 }
@@ -99,6 +108,7 @@ class BackendConfig:
     max_model_len: int = 16384
     enable_prefix_caching: bool = True
     trust_remote_code: bool = True
+    tensor_parallel_size: int = 1      # models.Model.tensor_parallel_size
 
 
 class VLLMBackend:
@@ -107,7 +117,6 @@ class VLLMBackend:
         # Prefix-cached reads (Experiment 2 only, needs vendor/vllm_lens_span_prefix.patch):
         # a read reuses the cached KV of the conversation and recomputes only the span.
         self.prefix_cache_reads = prefix_cache_reads
-        os.environ.setdefault("VLLM_ATTENTION_BACKEND", "FLASH_ATTN")
         os.environ.setdefault("VLLM_USE_FLASHINFER_SAMPLER", "0")
         os.environ.setdefault("VLLM_USE_V2_MODEL_RUNNER", "0")
         self._load()
@@ -137,6 +146,10 @@ class VLLMBackend:
         if self.family == "mistral":
             # Mistral-Small-3.2 is a vision-language model used text-only: skip vision profiling.
             llm_kwargs["limit_mm_per_prompt"] = {"image": 0, "video": 0}
+        if fam.attention_backend:
+            llm_kwargs["attention_backend"] = fam.attention_backend
+        if cfg.tensor_parallel_size > 1:
+            llm_kwargs["tensor_parallel_size"] = cfg.tensor_parallel_size
         self.llm = LLM(model=cfg.model_name, dtype=cfg.dtype,
                        gpu_memory_utilization=cfg.gpu_memory_utilization,
                        enforce_eager=True, max_model_len=cfg.max_model_len,

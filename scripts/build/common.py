@@ -51,8 +51,10 @@ def corpus_objective(idx: int) -> str:
 def load_backend(model: str, max_model_len: int = 8192, gpu_memory_utilization: float = 0.9):
     from neurofeedback.backend import BackendConfig, VLLMBackend
     from neurofeedback.models import get_model
-    return VLLMBackend(BackendConfig(get_model(model).hf_id, max_model_len=max_model_len,
-                                     gpu_memory_utilization=gpu_memory_utilization))
+    m = get_model(model)
+    return VLLMBackend(BackendConfig(m.hf_id, max_model_len=max_model_len,
+                                     gpu_memory_utilization=gpu_memory_utilization,
+                                     tensor_parallel_size=m.tensor_parallel_size))
 
 
 def mean_reads(backend, items, layer, chunk, tag=""):

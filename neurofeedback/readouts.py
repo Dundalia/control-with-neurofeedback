@@ -16,6 +16,12 @@ and come in four families:
 The first three are a centered cosine, mean_j cos(h_j - mu, v), at 33% or 66% depth. Every
 readout is computed from the residual stream at four anchor depths (33/44/55/66%).
 
+For the depth ablation of Experiment 2, the 15 direction readouts (probes, PC bands, encoder
+residual) are also built at 45, 55, 75, 85 and 95% depth (``EXTRA_DEPTHS``), for four models,
+in ``artifacts/readouts/depths/<model>.npz`` (``scripts/build/readouts_depths.py``). These
+artifacts hold the 42 readouts above plus the 75 new ones (``depth_readout_ids``), with one
+more anchor per new depth.
+
 The numerics (float64, the 1e-8 and 1e-12 guards, the NaN rules) are those the released
 calibration constants were computed with; do not change them.
 """
@@ -28,8 +34,20 @@ from pathlib import Path
 import numpy as np
 
 ANCHOR_DEPTHS = {"d33": 0.33, "d44": 0.44, "d55": 0.55, "d66": 0.66}
+# Read depths of the depth ablation (Experiment 2), besides 33% and 66%.
+EXTRA_DEPTHS = {"d45": 0.45, "d55": 0.55, "d75": 0.75, "d85": 0.85, "d95": 0.95}
+DEPTH_FRACTIONS = {**ANCHOR_DEPTHS, **EXTRA_DEPTHS}
 FAMILIES = ("probe", "pcband", "encres", "geometry")
 READOUTS_DIR = Path(__file__).resolve().parents[1] / "artifacts" / "readouts"
+DEPTH_READOUTS_DIR = READOUTS_DIR / "depths"
+DIRECTION_KINDS = (["probe_sentiment", "probe_morality", "probe_truth"]
+                   + [f"pcband_{lo}_{hi}_{r}" for lo, hi in ((20, 200), (200, 1000), (1000, 3000)) for r in (1, 2)]
+                   + [f"encres_{k}" for k in ("pc1", "pc2", "rand1", "rand2", "rand3", "rand4")])
+
+
+def depth_readout_ids(depths=tuple(EXTRA_DEPTHS)):
+    """The 15 direction readouts at each depth (e.g. ``probe_truth_d45``), in artifact order."""
+    return [f"{kind}_{d}" for d in depths for kind in DIRECTION_KINDS]
 
 
 def _angles(A, B):
@@ -124,7 +142,8 @@ class ReadoutSet:
         depths = [str(x) for x in z["depths"]]
         self.model = model
         self.num_layers = int(z["num_layers"])
-        self.layers = {d: int(z[f"layer_{d}"]) for d in ANCHOR_DEPTHS}
+        # The four anchors, and the extra depths of the depth-ablation artifacts.
+        self.layers = {d: int(z[f"layer_{d}"]) for d in DEPTH_FRACTIONS if f"layer_{d}" in z.files}
         if calibration == "exp1":
             cal = {k: z[f"calib_{k}"] for k in ("lo", "hi", "median")}
         elif calibration == "exp2":
@@ -151,15 +170,18 @@ class ReadoutSet:
         if readout_ids is not None and set(readout_ids) - set(self.readouts):
             raise KeyError(f"unknown readouts: {sorted(set(readout_ids) - set(self.readouts))}")
         self.ids = list(self.readouts)
+        # Layers of every read: the four anchors, and the extra depths the selected readouts use.
+        self.read_layers = sorted({self.layers[d] for d in ANCHOR_DEPTHS}
+                                  | {self.layers[a] for r in self.readouts.values() for a in r.anchors})
 
     def check_backend(self, backend):
         if backend.num_layers != self.num_layers:
             raise ValueError(f"{self.model}: readouts built for {self.num_layers} layers, "
                              f"backend has {backend.num_layers}")
         for d, layer in self.layers.items():
-            if backend.layer_for_depth(ANCHOR_DEPTHS[d]) != layer:
+            if backend.layer_for_depth(DEPTH_FRACTIONS[d]) != layer:
                 raise ValueError(f"{self.model}: anchor {d} is layer {layer} in the readouts, "
-                                 f"{backend.layer_for_depth(ANCHOR_DEPTHS[d])} in the backend")
+                                 f"{backend.layer_for_depth(DEPTH_FRACTIONS[d])} in the backend")
 
     def layers_for(self, readout: Readout) -> list[int]:
         return sorted({self.layers[a] for a in readout.anchors})
@@ -182,8 +204,9 @@ class ReadoutSet:
         return out
 
     def raw_all(self, backend, items, allow_prefix_cache=False):
-        """One read at the four anchors; a dict readout id -> raw value per item."""
-        layers = sorted(set(self.layers.values()))
+        """One read at the four anchors (and the extra depths of the selected readouts); a dict
+        readout id -> raw value per item."""
+        layers = self.read_layers
         reads = backend.read_residual_multi_batch(items, layers, enable_thinking=False,
                                                   allow_prefix_cache=allow_prefix_cache)
         out = []

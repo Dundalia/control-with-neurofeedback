@@ -6,6 +6,8 @@
   tables/compliance_exp4.tex      Table "Chain of thought in Experiment 4" (results/exp4.npz)
   tables/compliance_preflight.tex Table "Compliance test before the monitor experiments"
                                   (results/monitor_preflight.jsonl)
+  tables/additivity_exp1.tex      Table "Diagonal excess with and without the additive fit"
+                                  (results/exp1.npz), and the numbers of the additivity test
 """
 import argparse
 import csv
@@ -18,7 +20,7 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from neurofeedback.analysis import RESULTS, load  # noqa: E402
+from neurofeedback.analysis import RESULTS, Exp1, exp1_additivity, load  # noqa: E402
 from neurofeedback.monitors import CONCEPTS  # noqa: E402
 
 OUT = REPO / "tables"
@@ -143,6 +145,26 @@ def compliance_preflight_table(results):
     return "\n".join(lines)
 
 
+def signed(x):
+    """One decimal, with a LaTeX minus sign; no sign on a value that rounds to zero."""
+    t = f"{x:.1f}"
+    return "0.0" if t in ("0.0", "-0.0") else t.replace("-", "$-$")
+
+
+def additivity_table(results):
+    e1 = Exp1(results)
+    r = exp1_additivity(e1)
+    z = np.concatenate([b["loo_z"] for b in r["blocks"].values()])
+    print(f"% additivity at turn 20: {int((np.abs(z) > 2).sum())} of {z.size} held-out pairs with an error above "
+          f"2 bootstrap standard deviations; largest |b_S| {max(np.abs(b['b']).max() for b in r['blocks'].values()):.2f}")
+    lines = []
+    for i, m in enumerate(e1.models):
+        cells = [f"{signed(x)}\\,{{\\scriptsize[{signed(lo)},\\,{signed(hi)}]}}"
+                 for x, lo, hi in (r["excess"][i], r["excess_without_fit"][i])]
+        lines.append(f"{NAME[m]} & " + " & ".join(cells) + " \\\\")
+    return "\n".join(lines)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--results", default=str(RESULTS), help="directory of the results (default: results/)")
@@ -150,7 +172,7 @@ def main():
     OUT.mkdir(exist_ok=True)
     for name, fn in [("monitors", monitors_table), ("compliance_exp1", compliance_exp1_table),
                      ("compliance_exp4", compliance_exp4_table),
-                     ("compliance_preflight", compliance_preflight_table)]:
+                     ("compliance_preflight", compliance_preflight_table), ("additivity_exp1", additivity_table)]:
         tex = fn(a.results)
         (OUT / f"{name}.tex").write_text(tex + "\n")
         print(f"% {name}\n{tex}\n")

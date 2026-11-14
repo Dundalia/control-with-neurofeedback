@@ -9,6 +9,8 @@ Every script refers to a model by its key (e.g. ``qwen3.5-27b``). Each entry hol
   released ones.
 * ``writer``: how the model is called when it writes for another subject in
   Experiment 1 (OpenRouter, or a self-served OpenAI-compatible endpoint for OLMo).
+* ``tensor_parallel_size``: the number of GPUs vLLM splits the model over (1 for every model
+  but Qwen3.5-122B-A10B, which ran on two H200 GPUs).
 """
 from __future__ import annotations
 
@@ -22,6 +24,7 @@ class Model:
     display_name: str
     rng_tag: str
     writer: dict = field(default_factory=dict)
+    tensor_parallel_size: int = 1
 
 
 _OPENROUTER_NO_REASONING = {"reasoning": {"enabled": False}}
@@ -50,12 +53,19 @@ MODELS: dict[str, Model] = {m.key: m for m in [
     Model("gemma-4-12b", "google/gemma-4-12b-it", "Gemma-4-12B", "gemma-4-12b-it"),
     Model("qwen3.5-9b", "Qwen/Qwen3.5-9B", "Qwen3.5-9B", "qwen3-5-9b"),
     Model("qwen3.6-27b", "Qwen/Qwen3.6-27B", "Qwen3.6-27B", "qwen3-6-27b"),
+    # A mixture of experts, 122B parameters with 10B active; BF16 on two GPUs.
+    Model("qwen3.5-122b-a10b", "Qwen/Qwen3.5-122B-A10B", "Qwen3.5-122B-A10B", "qwen3-5-122b-a10b",
+          tensor_parallel_size=2),
 ]}
 
 # Experiment 1: every model writes for every subject, itself included.
 EXP1_MODELS = ["qwen3.5-27b", "gemma-4-31b", "gpt-oss-20b", "mistral-small-3.2-24b", "olmo-3.1-32b"]
-# Experiment 2: the five models of Experiment 1 plus five more.
-EXP2_MODELS = EXP1_MODELS + ["qwen3-32b", "qwen3-14b", "gemma-4-12b", "qwen3.5-9b", "qwen3.6-27b"]
+# Experiment 2: the five models of Experiment 1 plus six more.
+EXP2_MODELS = EXP1_MODELS + ["qwen3-32b", "qwen3-14b", "gemma-4-12b", "qwen3.5-9b", "qwen3.6-27b",
+                             "qwen3.5-122b-a10b"]
+# The additional analyses of Experiment 2 (shuffled control, targeted or broad modulation, read
+# depths): the three models with an objective difference against random scores, and Mistral.
+EXP2_ANALYSIS_MODELS = ["qwen3.5-27b", "qwen3.6-27b", "gemma-4-31b", "mistral-small-3.2-24b"]
 # Experiments 3 and 4: the models of Experiment 2 that natively produce a chain of thought.
 MONITOR_MODELS = ["gemma-4-12b", "gemma-4-31b", "qwen3-14b", "qwen3-32b", "qwen3.5-9b",
                   "qwen3.5-27b", "qwen3.6-27b", "gpt-oss-20b"]

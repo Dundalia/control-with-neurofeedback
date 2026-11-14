@@ -18,8 +18,8 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from neurofeedback.analysis import RESULTS, MonitorResults, bootstrap_mean  # noqa: E402
-from style import (C_DISCLOSED, C_HIDDEN, DISPLAY, FIGURE_ORDER, GRID, LINE_COLOR, ZERO,  # noqa: E402
-                   apply_style, clean_axes, end_labels, save)
+from style import (C_FOCUS, C_REFERENCE, DISPLAY, FIGURE_ORDER, GRID, LINE_COLOR, SERIES_OFFSET, ZERO,  # noqa: E402
+                   DotStyle, apply_style, clean_axes, end_labels, save)
 
 OUT = REPO / "figures"
 N_BOOT = 2000
@@ -71,16 +71,14 @@ def turn_panel(ax, res):
     ax.set_ylabel("$\\tau^{\\max}_t - \\tau^{\\min}_t$", fontsize=22)
 
 
-def effects_panel(ax, res):
+def effects_panel(ax, res, st):
     H = res.horizon
     rows = [(s, o) for s in models_of(res) for o in ("max", "min")]
     ys = np.arange(len(rows))[::-1]
     for y, (s, o) in zip(ys, rows):
-        for cond, col, dy in (("hidden", C_HIDDEN, +0.16), ("disclosed", C_DISCLOSED, -0.16)):
+        for cond, col, dy in (("hidden", C_REFERENCE, +SERIES_OFFSET), ("disclosed", C_FOCUS, -SERIES_OFFSET)):
             m, lo, hi = bootstrap_mean(res.control_effect(s, H - 1, o, cond), N_BOOT)
-            ax.plot([lo, hi], [y + dy, y + dy], color=col, lw=2.2, zorder=2)
-            ax.plot(m, y + dy, "o", color=col, ms=7, zorder=3,
-                    mfc=col if cond == "hidden" else "white", mec=col, mew=1.8)
+            st.dot(ax, m, lo, hi, y + dy, col)
     ax.set_yticks(ys)
     ax.set_yticklabels([f"{DISPLAY[s]} ({o})" for s, o in rows], fontsize=13)
     for i in range(0, len(rows), 2):
@@ -91,9 +89,7 @@ def effects_panel(ax, res):
     ax.yaxis.grid(False)
     ax.tick_params(labelsize=16, length=0)
     ax.set_xlabel(f"control effect  $\\tau^{{o}}_{{{H}}}$", fontsize=18)
-    ax.legend(handles=[Line2D([], [], marker="o", color=C_HIDDEN, mfc=C_HIDDEN, ls="-", ms=7, label="no disclosure"),
-                       Line2D([], [], marker="o", color=C_DISCLOSED, mfc="white", ls="-", ms=7,
-                              label="disclosure")],
+    ax.legend(handles=[st.handle(C_REFERENCE, "no disclosure"), st.handle(C_FOCUS, "disclosure")],
               fontsize=15, loc="lower left", framealpha=0.95)
 
 
@@ -156,8 +152,8 @@ def main():
     save(fig, OUT / "exp34_results.pdf")
 
     fig, (a3, a4) = plt.subplots(1, 2, figsize=(18, 8.5), constrained_layout=True)
-    effects_panel(a3, r3)
-    effects_panel(a4, r4)
+    effects_panel(a3, r3, DotStyle(fig, 1.0))
+    effects_panel(a4, r4, DotStyle(fig, 1.0))
     a3.set_xlim(-5, 5)
     a4.set_xlim(-8, 8)
     a4.set_xticks(range(-8, 9, 4))
